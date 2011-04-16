@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Engine where 
+module Cyoa.Engine where 
 
 import Prelude hiding (take, drop)  
 

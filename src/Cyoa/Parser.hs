@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Main where
+module Cyoa.Parser where
 
-import Engine  
+import Cyoa.Engine  
 
 import Control.Monad.Writer
 import Text.XML.Expat.Tree 
@@ -65,8 +65,7 @@ process filename = do
 
 doTest page = do
   output <- runCyoa $ do
-                -- modifyCounter (+2) "gyuru"
-                execWriterT $ evalPage page
+    execWriterT $ evalPage page
   mapM_ printOutputItem output
 
 printOutputItem (OutText s) = putStr s
