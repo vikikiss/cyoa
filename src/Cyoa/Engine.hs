@@ -182,9 +182,9 @@ evalPageItem (Goto capitalize pageNum) = do
             | pageNum < 50 = True
             | pageNum < 60 = False
             | otherwise = True                                                     
-evalPageItem (Inc counter) = do
-  lift $ modifyCounter succ counter
-                          
+evalPageItem (Inc counter) = lift $ modifyCounter succ counter
+evalPageItem (Take item) = lift $ take item
+  
 goto :: Monad m => PageNum -> CyoaT m Page
 goto pageNum = do
   modify $ \ playerState -> playerState{ player_page = pageNum }

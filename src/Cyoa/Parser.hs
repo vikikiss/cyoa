@@ -31,6 +31,7 @@ parseItem node@(Element "if" _ _) =
   where parseBranch node@(Element "text" _ _) = map parseItem $ getChildren node
         parseBranch node = [parseItem node]
 parseItem node@(Element "inc" [("counter", counter)] _) = Inc counter                           
+parseItem node@(Element "take" [("item", item)] _) = Take item
 
 parseCond :: UNode String -> Cond
 parseCond node@(Element "or" _ _) =
@@ -39,6 +40,7 @@ parseCond node@(Element "or" _ _) =
 parseCond node@(Element "eq" _ _) =
   let [left, right] = filter isElement $ getChildren node
   in parseExpr left :==: parseExpr right  
+parseCond node@(Element "carry" [("item", item)] _) = Carry item
 
 parseExpr :: UNode String -> Expr
 parseExpr (Element "intlit" [("value", v)] _) = ELiteral $ read v
