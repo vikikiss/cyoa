@@ -1,5 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Cyoa.Engine where 
+module Cyoa.Engine (
+  Page(..), PageItem(..), Expr(..), Cond(..), 
+  Output(..), OutputItem(..), 
+  
+  PlayerState, stepCyoa,
+  
+  runCyoa, evalPage, goto) where 
 
 import Prelude hiding (take, drop)  
 
@@ -35,7 +41,9 @@ data PlayerState = PS { player_carries :: Set Item,
                  deriving Show
 
 newtype CyoaT m a = CyoaT { unCyoaT :: RWST (Array PageNum Page) () PlayerState m a }
-  deriving (Monad, Functor, MonadTrans, MonadState PlayerState, Applicative)
+  deriving (Monad, Functor, MonadTrans, 
+            MonadState PlayerState, MonadReader (Array PageNum Page),
+            Applicative)
 
 -- RWS(T) muveletei:
 -- Reader:
@@ -167,8 +175,8 @@ evalPageItem (TextLit s) = tell [OutText s]
 evalPageItem (If c thn els) = do
   b <- lift $ evalCond c
   mapM_ evalPageItem (if b then thn else els)        
-evalPageItem (Goto False pageNum) = do
-  tell [OutLink pageNum $ unwords ["lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
+evalPageItem (Goto capitalize pageNum) = do
+  tell [OutLink pageNum $ unwords [if capitalize then "Lapozz" else "lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
   where the | pageNum `elem` [1, 5]  = False
             | pageNum `elem` [2, 3, 4, 6, 7, 8, 9] = True
             | pageNum < 50 = True
@@ -177,7 +185,10 @@ evalPageItem (Goto False pageNum) = do
 evalPageItem (Inc counter) = do
   lift $ modifyCounter succ counter
                           
--- goto :: PageNum -> CyoaM Page
+goto :: Monad m => PageNum -> CyoaT m Page
+goto pageNum = do
+  modify $ \ playerState -> playerState{ player_page = pageNum }
+  asks (!pageNum)
 
 test :: CyoaT IO ()                           
 test = do
@@ -197,14 +208,16 @@ test = do
   (lift . print) =<< evalCond c
   where c = CounterRef "rings" :==: ELiteral 5 :&&: Carry "sword"
                 
+stepCyoa :: CyoaT IO a -> [Page] -> PlayerState -> IO (a, PlayerState)
+stepCyoa f pages s = do
+  (result, s', output) <- runRWST (unCyoaT f) (listArray (1, 400) pages) s
+  return (result, s')
 
-runCyoa :: CyoaT IO a -> IO a                   
-runCyoa f = do
-  (result, state', output) <- runRWST (unCyoaT f) undefined state
-  return result
-  where state = PS { player_carries = Set.empty,
-                     player_flags = Set.empty,
-                     player_counters = Map.empty,
-                                       
-                     player_stats = undefined,
-                     player_page = 1 }
+runCyoa :: CyoaT IO a -> [Page] -> IO (a, PlayerState)
+runCyoa f pages = stepCyoa f pages s
+  where s = PS { player_carries = Set.empty,
+                 player_flags = Set.empty,
+                 player_counters = Map.empty,
+                 
+                 player_stats = undefined,
+                 player_page = 1 }

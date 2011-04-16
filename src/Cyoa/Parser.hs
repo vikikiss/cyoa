@@ -1,12 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Cyoa.Parser where
+module Cyoa.Parser (parsePages) where
 
 import Cyoa.Engine  
 
 import Control.Monad.Writer
 import Text.XML.Expat.Tree 
 import Text.XML.Expat.Format
-import System.Environment
 import System.Exit
 import System.IO
 import Data.List
@@ -22,7 +21,8 @@ parseItem :: UNode String -> PageItem
 parseItem (Text "\n") = TextLit " "
 parseItem (Text t) = TextLit $ trim t                        
 parseItem node@(Element "p" _ _) = Paragraph (map parseItem $ getChildren node)
-parseItem node@(Element "goto" _ _) = Goto False (read (fromJust $ getAttribute node "ref"))
+parseItem node@(Element "goto" [("ref", pageNum)] _) = Goto False (read pageNum)
+parseItem node@(Element "Goto" [("ref", pageNum)] _) = Goto True (read pageNum)
 parseItem node@(Element "if" _ _) =
   let cond:thn:elss = filter isElement $ getChildren node
   in If (parseCond cond) (parseBranch thn) $ case elss of
@@ -51,32 +51,13 @@ getId e@(Element "page" _ _) = case getAttribute e "id" of
 trim = f . f
   where f = reverse . dropWhile isSpace
 
-process :: String -> IO ()
-process filename = do
+parsePages :: FilePath -> IO [Page]
+parsePages filename = do
      inputText <- L.readFile filename
      let (xml, mErr) = parse defaultParseOptions inputText
      case mErr of
        Nothing -> do         
-         let page = parsePage $ (filter isElement $ getChildren xml)!!0
-         doTest page
+         return $ map parsePage (filter isElement $ getChildren xml)
        Just err -> do
-         hPutStrLn stderr $ "XML parse failed: "++show err
+         hPutStrLn stderr $ "XML parse failed: " ++ show err
          exitWith $ ExitFailure 2
-
-doTest page = do
-  output <- runCyoa $ do
-    execWriterT $ evalPage page
-  mapM_ printOutputItem output
-
-printOutputItem (OutText s) = putStr s
-printOutputItem (OutLink n s) = putStr s
-printOutputItem (OutBreak) = putStrLn ""                                
-        
-main = do
-  args <- getArgs
-  case args of
-    [filename] -> process filename
-    otherwise  -> do
-      hPutStrLn stderr "Usage: helloworld <file.xml>"
-      exitWith $ ExitFailure 1
-
