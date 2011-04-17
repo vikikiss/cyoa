@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Cyoa.Parser (parsePages) where
 
+import Cyoa.NormalizeXML
 import Cyoa.Engine  
 
 import Control.Monad.Writer
@@ -18,8 +19,7 @@ parsePage :: UNode String -> Page
 parsePage node = Page (getId node) (map parseItem (filter isElement $ getChildren node))
 
 parseItem :: UNode String -> PageItem
-parseItem (Text "\n") = TextLit " "
-parseItem (Text t) = TextLit $ trim t                        
+parseItem (Text t) = TextLit t                        
 parseItem node@(Element "p" _ _) = Paragraph (map parseItem $ getChildren node)
 parseItem node@(Element "goto" [("ref", pageNum)] _) = Goto False (read pageNum)
 parseItem node@(Element "Goto" [("ref", pageNum)] _) = Goto True (read pageNum)
@@ -50,16 +50,13 @@ getId :: UNode String -> Int
 getId e@(Element "page" _ _) = case getAttribute e "id" of
   Just x -> read x
 
-trim = f . f
-  where f = reverse . dropWhile isSpace
-
 parsePages :: FilePath -> IO [Page]
 parsePages filename = do
      inputText <- L.readFile filename
      let (xml, mErr) = parse defaultParseOptions inputText
      case mErr of
        Nothing -> do         
-         return $ map parsePage (filter isElement $ getChildren xml)
+         return $ map (parsePage . normalizeXML) (filter isElement $ getChildren xml)
        Just err -> do
          hPutStrLn stderr $ "XML parse failed: " ++ show err
          exitWith $ ExitFailure 2
