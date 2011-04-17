@@ -94,7 +94,9 @@ main = do
   --     OutLink pageNum s -> insertLinkToBuf buf s pageNum
   
   tview <- textViewNewWithBuffer buf
-  set tview [textViewWrapMode := WrapWord]
+  set tview [textViewWrapMode := WrapWord, textViewPixelsAboveLines := 10,
+             textViewLeftMargin := 10, textViewRightMargin := 10,
+             textViewIndent := 10]
   textViewSetEditable tview False
   textViewSetCursorVisible tview False
   
