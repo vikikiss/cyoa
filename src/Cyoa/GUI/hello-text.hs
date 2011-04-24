@@ -42,6 +42,13 @@ refState = unsafePerformIO $ newIORef (error "refState")
 refPages :: IORef [Page]
 refPages = unsafePerformIO $ newIORef (error "refPages")
 
+stepEngine f = do
+  s <- readIORef refState
+  pages <- readIORef refPages
+  (x, s') <- stepCyoa f pages s
+  writeIORef refState s'
+  return x
+           
 insertLinkToBuf buf view text pageNum = do
   (start, end) <- insertTextToBuf buf text
   tag <- textTagNew Nothing
@@ -49,10 +56,7 @@ insertLinkToBuf buf view text pageNum = do
   onTextTagEvent tag $ \e iter -> do
     case e of
       Button{} -> when (eventClick e == ReleaseClick) $ do
-                    s <- readIORef refState
-                    pages <- readIORef refPages
-                    (output, s') <- stepCyoa (goto pageNum >> evalPage) pages s
-                    writeIORef refState s'
+                    output <- stepEngine (goto pageNum >> evalPage)
                     render buf view pageNum output
       Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
       _ -> return ()
@@ -117,4 +121,9 @@ render buf view pageNum output = do
           display os
         widgetShow roll
         textViewAddChildAtAnchor view roll anchor
+      display ((OutFight enemies fight):os) = do
+        textBufferInsertAtCursor buf $ show enemies
+        let agent = FightAgent (const $ return False) (textBufferInsertAtCursor buf . show)
+        stepEngine (fight agent)
+        display os
       display [] = return ()

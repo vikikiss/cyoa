@@ -32,6 +32,8 @@ parseItem node@(Element "if" _ _) =
   where parseBranch node@(Element "text" _ _) = map parseItem $ getChildren node
         parseBranch node = [parseItem node]
 parseItem node@(Element "inc" [("counter", counter)] _) = Inc counter                           
+parseItem node@(Element "dec" [("counter", counter)] _) = Dec counter                           
+parseItem node@(Element "clear" [("counter", counter)] _) = Clear counter                           
 parseItem node@(Element "take" [("item", item)] _) = Take item
 parseItem node@(Element "damage" [("stat", stat)] _) = Damage (parseStat stat) (parseExpr expr)
   where [expr] = filter isElement $ getChildren node                                                     
@@ -39,7 +41,10 @@ parseItem node@(Element "heal" [("stat", stat)] _) = Heal (parseStat stat) (pars
   where [expr] = filter isElement $ getChildren node                                                     
 parseItem node@(Element "set-flag" [("flag", flag)] _) = Set flag
 parseItem node@(Element "dice" [("name", name)] _) = DieDef name
-                                                         
+parseItem node@(Element "fight" _ _) = Fight $ map parseEnemy $ filter isElement $ getChildren node
+
+parseEnemy node@(Element "enemy" [("agility", agility), ("health", health)] [(Text name)]) = Enemy name (read agility) (read health)
+                                                     
 parseStat "health" = Health
 parseStat "luck" = Luck
 parseStat "agility" = Agility
@@ -67,6 +72,7 @@ parseExpr (Element "var" [("ref", name)] _) = DieRef name
 parseExpr node@(Element "plus" _ _) = parseBin node (:+:)
 parseExpr node@(Element "minus" _ _) = parseBin node (:-:)
 parseExpr node@(Element "mul" _ _) = parseBin node (:*:)
+parseExpr node@(Element "mod" _ _) = parseBin node (:%:)
 parseExpr (Element "score" [("stat", stat)] _) = AbilityQuery (parseStat stat)
 parseExpr node@(Element "cond" _ _) =
   let [cond, thn, els] = filter isElement $ getChildren node

@@ -1,11 +1,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Cyoa.Engine (
-  Page(..), PageItem(..), Expr(..), Cond(..), 
+  Page(..), PageItem(..), Expr(..), Cond(..), Enemy(..),
   Output(..), OutputItem(..), 
 
   Ability(..),
   PlayerState, stepCyoa,
-           
+
+  FightAgent(..), Attacker(..), FightEvent(..),
+             
   mkPlayer, evalPage, goto) where 
 
 import Prelude hiding (take, drop)  
@@ -107,6 +109,7 @@ data Expr = ELiteral Int
           | Expr :+: Expr
           | Expr :-: Expr
           | Expr :*: Expr
+          | Expr :%: Expr
           | DieRef Die
           | ECond Cond Expr Expr -- ?:
           | CounterRef Counter
@@ -118,6 +121,7 @@ evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
 evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
 evalExpr (e :*: f) = (*) <$> evalExpr e <*> evalExpr f
+evalExpr (e :%: f) = mod <$> evalExpr e <*> evalExpr f
 evalExpr (DieRef die) = gets (fromJust . Map.lookup die)
 evalExpr (CounterRef counter) = lift $ getCounter counter                     
 evalExpr (AbilityQuery a) = lift $ getAbility a
@@ -165,16 +169,81 @@ data PageItem = Paragraph [PageItem]
               | Take Item
               | Inc Counter
               | Dec Counter
+              | Clear Counter
               | Set Flag
               | Reset Flag
+              | Fight [Enemy]
               deriving Show
-                       
+
+data Enemy = Enemy { enemy_name :: String,
+                     enemy_agility :: Int,
+                     enemy_health :: Int }
+             deriving Show
+
+data Attacker = AttackerEnemy String
+              | AttackerPlayer
+              deriving Show
+data FightAgent m = FightAgent (Attacker -> m Bool) (FightEvent -> m ())
+data FightEvent = Hit Attacker Int
+                | Draw
+                | PlayerDied
+                | EnemyDied String
+                | Rolled Int
+                deriving Show
+
+fight :: (Functor m, MonadIO m) => FightAgent IO -> [Enemy] -> CyoaT m ()
+fight _ [] = return ()
+fight agent@(FightAgent tryLuck notify) (e:es) = do
+  enemy_attack <- (+) (enemy_agility e) <$> ((+) <$> roll <*> roll)
+  player_attack <- (+) <$> getAbility Agility <*> ((+) <$> roll <*> roll)
+  case enemy_attack `compare` player_attack of
+    EQ -> do
+      liftIO $ notify Draw
+      fight agent (e:es)
+    LT -> do
+      shouldTryLuck <- liftIO $ tryLuck AttackerPlayer
+      damage <- 
+        if shouldTryLuck
+          then do
+            lucky <- hasLuck
+            return (if lucky then 4 else 1)
+          else return 2
+      liftIO $ notify $ Hit AttackerPlayer damage
+      let e' = e{ enemy_health = enemy_health e - damage }
+      if enemy_health e' <= 0
+        then do
+          liftIO $ notify $ EnemyDied (enemy_name e)
+          fight agent es
+        else fight agent (e':es)
+    GT -> do
+      shouldTryLuck <- liftIO $ tryLuck (AttackerEnemy (enemy_name e))
+      damage <- 
+        if shouldTryLuck
+          then do
+            lucky <- hasLuck
+            return (if lucky then 1 else 3)
+          else return 2
+      liftIO $ notify $ Hit (AttackerEnemy (enemy_name e)) damage
+      modifyAbility (\x -> x - damage) Health
+      health <- getAbility Health
+      if health <= 0
+         then liftIO $ notify $ PlayerDied
+         else fight agent (e:es)
+  where hasLuck = do
+          d1 <- roll
+          liftIO $ notify (Rolled d1)
+          d2 <- roll
+          liftIO $ notify (Rolled d2)
+          luck <- getAbility Luck
+          modifyAbility (\x -> x - 1) Luck                          
+          return $ d1 + d2 <= luck          
+                   
 type Output = [OutputItem]
 data OutputItem = OutText String
                 | OutDie Int
                 | OutLink PageNum String
                 | OutBreak
-                deriving Show
+                | OutFight [Enemy] (FightAgent IO -> CyoaT IO ())
 
 evalPage :: (Functor m, MonadIO m) => CyoaT m Output
 evalPage = do
@@ -200,6 +269,8 @@ evalPageItem (Goto capitalize pageNum) = do
             | pageNum < 60 = False
             | otherwise = True                                                     
 evalPageItem (Inc counter) = lift $ modifyCounter succ counter
+evalPageItem (Dec counter) = lift $ modifyCounter pred counter
+evalPageItem (Clear counter) = lift $ modifyCounter (const 0) counter
 evalPageItem (Take item) = lift $ take item
 evalPageItem (GotoLucky refYes refNo) = do
   d1 <- roll
@@ -221,7 +292,9 @@ evalPageItem (DieDef name) = do
   n <- roll
   tell [OutDie n]
   modify (Map.insert name n)
-
+evalPageItem (Fight enemies) = do
+  tell [OutFight enemies $ fight `flip` enemies]
+                               
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
@@ -244,4 +317,4 @@ mkPlayer = do
               player_counters = Map.empty,
                  
               player_stats = Map.fromList [(Luck, luck), (Agility, agility), (Health, health)],
-              player_page = 1 }
+              player_page = 73 }
