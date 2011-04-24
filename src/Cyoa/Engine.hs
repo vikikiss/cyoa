@@ -2,10 +2,11 @@
 module Cyoa.Engine (
   Page(..), PageItem(..), Expr(..), Cond(..), 
   Output(..), OutputItem(..), 
-  
+
+  Ability(..),
   PlayerState, stepCyoa,
-  
-  runCyoa, evalPage, goto) where 
+           
+  mkPlayer, evalPage, goto) where 
 
 import Prelude hiding (take, drop)  
 
@@ -18,6 +19,7 @@ import qualified Data.Map as Map
 import Data.Array
 import Data.Maybe
 import Control.Applicative
+import System.Random
   
 type Item = String
 type Flag = String
@@ -41,7 +43,7 @@ data PlayerState = PS { player_carries :: Set Item,
                  deriving Show
 
 newtype CyoaT m a = CyoaT { unCyoaT :: RWST (Array PageNum Page) () PlayerState m a }
-  deriving (Monad, Functor, MonadTrans, 
+  deriving (Monad, Functor, MonadTrans, MonadIO, 
             MonadState PlayerState, MonadReader (Array PageNum Page),
             Applicative)
 
@@ -99,23 +101,30 @@ modifyAbility :: (Monad m) => (Int -> Int) -> Ability -> CyoaT m ()
 modifyAbility f a = modify $ \playerState -> playerState { player_stats = Map.alter f' a (player_stats playerState) }
   where f' = Just . f . fromJust
 
+type EvaluatorT m a = RWST () Output (Map Die Int) (CyoaT m) a                         
+                         
 data Expr = ELiteral Int
           | Expr :+: Expr
           | Expr :-: Expr
           | Expr :*: Expr
           | DieRef Die
+          | ECond Cond Expr Expr -- ?:
           | CounterRef Counter
           | AbilityQuery Ability
           deriving Show
 
-evalExpr :: (Monad m, Functor m) => Expr -> CyoaT m Int
+evalExpr :: (Monad m, Functor m) => Expr -> EvaluatorT m Int
 evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
 evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
 evalExpr (e :*: f) = (*) <$> evalExpr e <*> evalExpr f
-evalExpr (CounterRef counter) = getCounter counter                     
-evalExpr (AbilityQuery a) = getAbility a
-                                
+evalExpr (DieRef die) = gets (fromJust . Map.lookup die)
+evalExpr (CounterRef counter) = lift $ getCounter counter                     
+evalExpr (AbilityQuery a) = lift $ getAbility a
+evalExpr (ECond cond thn els) = do
+  b <- evalCond cond
+  evalExpr (if b then thn else els)
+                            
 data Cond = CLiteral Bool
           | Cond :||: Cond
           | Cond :&&: Cond
@@ -126,9 +135,10 @@ data Cond = CLiteral Bool
           | Expr :>=: Expr
           | Expr :==: Expr
           | Carry Item
+          | FlagSet Flag
           deriving Show
 
-evalCond :: (Monad m, Functor m) => Cond -> CyoaT m Bool
+evalCond :: (Monad m, Functor m) => Cond -> EvaluatorT m Bool
 evalCond (CLiteral b) = return b
 evalCond (c :||: d) = (||) <$> evalCond c <*> evalCond d
 evalCond (c :&&: d) = (&&) <$> evalCond c <*> evalCond d
@@ -138,7 +148,8 @@ evalCond (e :>: f) = (>) <$> evalExpr e <*> evalExpr f
 evalCond (e :>=: f) = (>=) <$> evalExpr e <*> evalExpr f                      
 evalCond (e :==: f) = (==) <$> evalExpr e <*> evalExpr f                      
 evalCond (CNot c) = not <$> evalCond c
-evalCond (Carry item) = carries item                    
+evalCond (Carry item) = lift $ carries item                    
+evalCond (FlagSet flag) = lift $ flagSet flag
                       
 data Page = Page PageNum [PageItem]
           deriving Show
@@ -160,20 +171,26 @@ data PageItem = Paragraph [PageItem]
                        
 type Output = [OutputItem]
 data OutputItem = OutText String
+                | OutDie Int
                 | OutLink PageNum String
                 | OutBreak
                 deriving Show
-              
-evalPage :: (Monad m, Functor m) => Page -> WriterT Output (CyoaT m) ()
-evalPage (Page _ is) = mapM_ evalPageItem is
 
-evalPageItem :: (Functor m, Monad m) => PageItem -> WriterT Output (CyoaT m) ()
+evalPage :: (Functor m, MonadIO m) => CyoaT m Output
+evalPage = do
+  pageNum <- gets player_page
+  (Page _ is) <- asks (!pageNum)
+  (_, w) <- execRWST `flip` () `flip` Map.empty $ do              
+              mapM_ evalPageItem is
+  return w                    
+
+evalPageItem :: (Functor m, MonadIO m) => PageItem -> EvaluatorT m ()
 evalPageItem (Paragraph is) = do
   mapM_ evalPageItem is
   tell [OutBreak]       
 evalPageItem (TextLit s) = tell [OutText s]
 evalPageItem (If c thn els) = do
-  b <- lift $ evalCond c
+  b <- evalCond c
   mapM_ evalPageItem (if b then thn else els)        
 evalPageItem (Goto capitalize pageNum) = do
   tell [OutLink pageNum $ unwords [if capitalize then "Lapozz" else "lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
@@ -184,40 +201,47 @@ evalPageItem (Goto capitalize pageNum) = do
             | otherwise = True                                                     
 evalPageItem (Inc counter) = lift $ modifyCounter succ counter
 evalPageItem (Take item) = lift $ take item
-  
-goto :: Monad m => PageNum -> CyoaT m Page
-goto pageNum = do
-  modify $ \ playerState -> playerState{ player_page = pageNum }
-  asks (!pageNum)
+evalPageItem (GotoLucky refYes refNo) = do
+  d1 <- roll
+  d2 <- roll
+  luck <- lift $ getAbility Luck
+  let page' | d1 + d2 <= luck = refYes
+            | otherwise = refNo
+  lift $ modifyAbility (\x -> x - 1) Luck
+  tell [OutText "Tedd próbára SZERENCSÉDET!", OutDie d1, OutDie d2]
+  evalPageItem (Goto True page')
+evalPageItem (Damage ability expr) = do
+  value <- evalExpr expr
+  lift $ modifyAbility (\x -> x - value) ability
+evalPageItem (Heal ability expr) = do
+  value <- evalExpr expr
+  lift $ modifyAbility (+value) ability
+evalPageItem (Set flag) = lift $ set flag
+evalPageItem (DieDef name) = do
+  n <- roll
+  tell [OutDie n]
+  modify (Map.insert name n)
 
-test :: CyoaT IO ()                           
-test = do
-  let item = "sword"
-      counter = "rings"
-  (lift . print) =<< carries item
-  (lift . print) =<< getCounter counter                   
-  take item  
-  (lift . print) =<< carries item                   
-  drop item
-  (lift . print) =<< carries item
-  modifyCounter (+4) counter
-  (lift . print) =<< getCounter counter
-  (lift . print) =<< evalCond c
-  modifyCounter (+1) counter
-  take item                 
-  (lift . print) =<< evalCond c
-  where c = CounterRef "rings" :==: ELiteral 5 :&&: Carry "sword"
-                
+roll :: (MonadIO m) => m Int
+roll = liftIO $ randomRIO (1, 6)        
+        
+goto :: Monad m => PageNum -> CyoaT m ()
+goto pageNum =
+  modify $ \ playerState -> playerState{ player_page = pageNum }  
+                            
 stepCyoa :: CyoaT IO a -> [Page] -> PlayerState -> IO (a, PlayerState)
 stepCyoa f pages s = do
   (result, s', output) <- runRWST (unCyoaT f) (listArray (1, 400) pages) s
   return (result, s')
 
-runCyoa :: CyoaT IO a -> [Page] -> IO (a, PlayerState)
-runCyoa f pages = stepCyoa f pages s
-  where s = PS { player_carries = Set.empty,
-                 player_flags = Set.empty,
-                 player_counters = Map.empty,
+mkPlayer :: IO PlayerState
+mkPlayer = do
+  agility <- (6+) <$> roll
+  health <- (12+) <$> ((+) <$> roll <*> roll)
+  luck <- (6+) <$> roll            
+  return PS { player_carries = Set.empty,
+              player_flags = Set.empty,
+              player_counters = Map.empty,
                  
-                 player_stats = undefined,
-                 player_page = 1 }
+              player_stats = Map.fromList [(Luck, luck), (Agility, agility), (Health, health)],
+              player_page = 1 }

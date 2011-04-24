@@ -37,12 +37,12 @@ insertHeader buf text = do
   textBufferInsertAtCursor buf "\n"
 
 refState :: IORef PlayerState
-refState = unsafePerformIO $ newIORef undefined
+refState = unsafePerformIO $ newIORef (error "refState")
 
 refPages :: IORef [Page]
-refPages = unsafePerformIO $ newIORef undefined
+refPages = unsafePerformIO $ newIORef (error "refPages")
 
-insertLinkToBuf buf text pageNum = do
+insertLinkToBuf buf view text pageNum = do
   (start, end) <- insertTextToBuf buf text
   tag <- textTagNew Nothing
   set tag [ textTagForeground := "blue", textTagUnderline := UnderlineSingle ]
@@ -51,10 +51,10 @@ insertLinkToBuf buf text pageNum = do
       Button{} -> when (eventClick e == ReleaseClick) $ do
                     s <- readIORef refState
                     pages <- readIORef refPages
-                    (output, s') <- stepCyoa (goto pageNum >>= execWriterT . evalPage) pages s
+                    (output, s') <- stepCyoa (goto pageNum >> evalPage) pages s
                     writeIORef refState s'
-                    render buf pageNum output
-      Motion{} -> return () -- TODO: set mouse cursor
+                    render buf view pageNum output
+      Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
       _ -> return ()
   -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
   -- on tag textTagEvent $ \sender iter -> do
@@ -74,26 +74,20 @@ main = do
       exitWith $ ExitFailure 1
   writeIORef refPages pages
 
-  (output, s0) <- runCyoa `flip` pages $ do
-    page <- goto 1
-    execWriterT $ evalPage page
-  writeIORef refState s0
+  s0 <- mkPlayer             
+  (output, s) <- stepCyoa `flip` pages `flip` s0 $ do
+                   evalPage
+  writeIORef refState s
 
   wnd <- windowNew
   on wnd deleteEvent $ do
     lift $ mainQuit
     return True
     
-  buf <- textBufferNew Nothing  
-  render buf 1 output
-  -- insertHeader buf "1."
-  -- forM_ output $ \outputItem -> do
-  --   case outputItem of
-  --     OutBreak -> textBufferInsertAtCursor buf "\n"
-  --     OutText s -> textBufferInsertAtCursor buf s
-  --     OutLink pageNum s -> insertLinkToBuf buf s pageNum
-  
+  buf <- textBufferNew Nothing    
   tview <- textViewNewWithBuffer buf
+  render buf tview 1 output
+         
   set tview [textViewWrapMode := WrapWord, textViewPixelsAboveLines := 10,
              textViewLeftMargin := 10, textViewRightMargin := 10,
              textViewIndent := 10]
@@ -107,13 +101,20 @@ main = do
   widgetShowAll wnd  
   mainGUI
 
-render buf pageNum output = do
+render buf view pageNum output = do
   textBufferSetText buf ""
   insertHeader buf (show pageNum ++ ".")
-  forM_ output $ \outputItem -> do
-    case outputItem of
-      OutBreak -> textBufferInsertAtCursor buf "\n"
-      OutText s -> textBufferInsertAtCursor buf s
-      OutLink pageNum s -> insertLinkToBuf buf s pageNum
-  
-  
+  display output
+    where
+      display (OutBreak:os) = textBufferInsertAtCursor buf "\n" >> display os
+      display ((OutText s):os) = textBufferInsertAtCursor buf s >> display os
+      display ((OutLink pageNum s):os) = insertLinkToBuf buf view s pageNum >> display os
+      display ((OutDie n):os) = do
+        anchor <- textBufferCreateChildAnchor buf =<< textBufferGetIterAtMark buf =<< textBufferGetInsert buf
+        roll <- buttonNewWithLabel "Dobj"
+        on roll buttonActivated $ do
+          set roll [widgetSensitive := False, buttonLabel := show n]              
+          display os
+        widgetShow roll
+        textViewAddChildAtAnchor view roll anchor
+      display [] = return ()
