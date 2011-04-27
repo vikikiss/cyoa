@@ -317,4 +317,4 @@ mkPlayer = do
               player_counters = Map.empty,
                  
               player_stats = Map.fromList [(Luck, luck), (Agility, agility), (Health, health)],
-              player_page = 73 }
+              player_page = 1 } -- harc teszt: 73
