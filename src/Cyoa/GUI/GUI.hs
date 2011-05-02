@@ -17,6 +17,7 @@ import System.IO
 import Data.IORef
 import System.IO.Unsafe
 
+-- TODO: always insert text to end of buffer  
 insertTextToBuf buf text = do
   before <- textMarkNew Nothing True
   textBufferAddMark buf before =<< textBufferGetIterAtMark buf =<< textBufferGetInsert buf
@@ -49,15 +50,15 @@ stepEngine f = do
   writeIORef refState s'
   return x
            
-insertLinkToBuf buf view text pageNum = do
+insertLinkToBuf buf view text link = do
   (start, end) <- insertTextToBuf buf text
   tag <- textTagNew Nothing
   set tag [ textTagForeground := "blue", textTagUnderline := UnderlineSingle ]
   onTextTagEvent tag $ \e iter -> do
     case e of
       Button{} -> when (eventClick e == ReleaseClick) $ do
-                    output <- stepEngine (goto pageNum >> evalPage)
-                    render buf view pageNum output
+                    output <- stepEngine (goto link >> evalPage)
+                    render buf view output
       Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
       _ -> return ()
   -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
@@ -90,7 +91,7 @@ main = do
     
   buf <- textBufferNew Nothing    
   tview <- textViewNewWithBuffer buf
-  render buf tview 1 output
+  render buf tview output
          
   set tview [textViewWrapMode := WrapWord, textViewPixelsAboveLines := 10,
              textViewLeftMargin := 10, textViewRightMargin := 10,
@@ -105,14 +106,14 @@ main = do
   widgetShowAll wnd  
   mainGUI
 
-render buf view pageNum output = do
+render buf view (Output title outItems) = do
   textBufferSetText buf ""
-  insertHeader buf (show pageNum ++ ".")
-  display output
+  insertHeader buf title
+  display outItems
     where
       display (OutBreak:os) = textBufferInsertAtCursor buf "\n" >> display os
       display ((OutText s):os) = textBufferInsertAtCursor buf s >> display os
-      display ((OutLink pageNum s):os) = insertLinkToBuf buf view s pageNum >> display os
+      display ((OutLink link s):os) = insertLinkToBuf buf view s link >> display os
       display ((OutDie n):os) = do
         anchor <- textBufferCreateChildAnchor buf =<< textBufferGetIterAtMark buf =<< textBufferGetInsert buf
         roll <- buttonNewWithLabel "Dobj"
@@ -121,9 +122,9 @@ render buf view pageNum output = do
           display os
         widgetShow roll
         textViewAddChildAtAnchor view roll anchor
-      display ((OutFight enemies fight):os) = do
-        textBufferInsertAtCursor buf $ show enemies
-        let agent = FightAgent (const $ return False) (textBufferInsertAtCursor buf . show)
-        stepEngine (fight agent)
-        display os
+      -- display ((OutFight enemies fight):os) = do
+      --   textBufferInsertAtCursor buf $ show enemies
+      --   let agent = FightAgent (const $ return False) (textBufferInsertAtCursor buf . show)
+      --   stepEngine (fight agent)
+      --   display os
       display [] = return ()

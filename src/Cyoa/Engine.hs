@@ -6,7 +6,7 @@ module Cyoa.Engine (
   Ability(..),
   PlayerState, stepCyoa,
 
-  FightAgent(..), Attacker(..), FightEvent(..),
+  -- FightAgent(..), Attacker(..), FightEvent(..),
              
   mkPlayer, evalPage, goto) where 
 
@@ -31,18 +31,22 @@ type Die = String -- Dobokocka
 data Ability = Health -- Eletero
              | Agility -- Ugyesseg
              | Luck -- Szerencse
-             deriving (Eq, Ord, Show)
+             deriving (Eq, Ord, Show, Read)
 
 type PageNum = Int
 
-data PlayerState = PS { player_carries :: Set Item,
-                        player_flags :: Set Flag,
-                        player_counters :: Map Counter Int,
-                                           
-                        player_stats :: Map Ability Int,
-                                        
-                        player_page :: PageNum }
-                 deriving Show
+data FightState = FS { fight_enemies :: [Enemy]
+                     , fight_last_round :: Maybe FightRound}
+                deriving (Show)
+  
+data PlayerState = PS { player_carries :: Set Item
+                      , player_flags :: Set Flag
+                      , player_counters :: Map Counter Int                                           
+                      , player_stats :: Map Ability Int
+                      , player_fight :: Maybe FightState
+                      , player_page :: PageNum
+                      }
+                 deriving (Show)
 
 newtype CyoaT m a = CyoaT { unCyoaT :: RWST (Array PageNum Page) () PlayerState m a }
   deriving (Monad, Functor, MonadTrans, MonadIO, 
@@ -103,7 +107,7 @@ modifyAbility :: (Monad m) => (Int -> Int) -> Ability -> CyoaT m ()
 modifyAbility f a = modify $ \playerState -> playerState { player_stats = Map.alter f' a (player_stats playerState) }
   where f' = Just . f . fromJust
 
-type EvaluatorT m a = RWST () Output (Map Die Int) (CyoaT m) a                         
+type EvaluatorT m a = RWST () [OutputItem] (Map Die Int) (CyoaT m) a                         
                          
 data Expr = ELiteral Int
           | Expr :+: Expr
@@ -180,79 +184,167 @@ data Enemy = Enemy { enemy_name :: String,
                      enemy_health :: Int }
              deriving Show
 
-data Attacker = AttackerEnemy String
-              | AttackerPlayer
+-- data Attacker = AttackerEnemy String
+--               | AttackerPlayer
+--               deriving Show
+-- data FightAgent m = FightAgent (Attacker -> m Bool) (FightEvent -> m ())
+-- data FightEvent = Hit Attacker Int
+--                 | Draw
+--                 | PlayerDied
+--                 | EnemyDied String
+--                 | Rolled Int
+--                 deriving Show
+
+-- fight :: (Functor m, MonadIO m) => FightAgent IO -> [Enemy] -> CyoaT m ()
+-- fight _ [] = return ()
+-- fight agent@(FightAgent tryLuck notify) (e:es) = do
+--   enemy_attack <- (+) (enemy_agility e) <$> ((+) <$> roll <*> roll)
+--   player_attack <- (+) <$> getAbility Agility <*> ((+) <$> roll <*> roll)
+--   case enemy_attack `compare` player_attack of
+--     EQ -> do
+--       liftIO $ notify Draw
+--       fight agent (e:es)
+--     LT -> do
+--       shouldTryLuck <- liftIO $ tryLuck AttackerPlayer
+--       damage <- 
+--         if shouldTryLuck
+--           then do
+--             lucky <- hasLuck
+--             return (if lucky then 4 else 1)
+--           else return 2
+--       liftIO $ notify $ Hit AttackerPlayer damage
+--       let e' = e{ enemy_health = enemy_health e - damage }
+--       if enemy_health e' <= 0
+--         then do
+--           liftIO $ notify $ EnemyDied (enemy_name e)
+--           fight agent es
+--         else fight agent (e':es)
+--     GT -> do
+--       shouldTryLuck <- liftIO $ tryLuck (AttackerEnemy (enemy_name e))
+--       damage <- 
+--         if shouldTryLuck
+--           then do
+--             lucky <- hasLuck
+--             return (if lucky then 1 else 3)
+--           else return 2
+--       liftIO $ notify $ Hit (AttackerEnemy (enemy_name e)) damage
+--       modifyAbility (\x -> x - damage) Health
+--       health <- getAbility Health
+--       if health <= 0
+--          then liftIO $ notify $ PlayerDied
+--          else fight agent (e:es)
+--   where hasLuck = do
+--           d1 <- roll
+--           liftIO $ notify (Rolled d1)
+--           d2 <- roll
+--           liftIO $ notify (Rolled d2)
+--           luck <- getAbility Luck
+--           modifyAbility (\x -> x - 1) Luck                          
+--           return $ d1 + d2 <= luck          
+
+data Attacker = AttackerPlayer
+              | AttackerEnemy
               deriving Show
-data FightAgent m = FightAgent (Attacker -> m Bool) (FightEvent -> m ())
-data FightEvent = Hit Attacker Int
-                | Draw
-                | PlayerDied
-                | EnemyDied String
-                | Rolled Int
+
+data Link = PageLink PageNum
+          | StartFightLink [Enemy]
+          | ContinueFightLink (Maybe FightRound)
+            
+data FightRound = FightRound Attacker Bool
                 deriving Show
 
-fight :: (Functor m, MonadIO m) => FightAgent IO -> [Enemy] -> CyoaT m ()
-fight _ [] = return ()
-fight agent@(FightAgent tryLuck notify) (e:es) = do
-  enemy_attack <- (+) (enemy_agility e) <$> ((+) <$> roll <*> roll)
-  player_attack <- (+) <$> getAbility Agility <*> ((+) <$> roll <*> roll)
-  case enemy_attack `compare` player_attack of
-    EQ -> do
-      liftIO $ notify Draw
-      fight agent (e:es)
-    LT -> do
-      shouldTryLuck <- liftIO $ tryLuck AttackerPlayer
-      damage <- 
-        if shouldTryLuck
-          then do
-            lucky <- hasLuck
-            return (if lucky then 4 else 1)
-          else return 2
-      liftIO $ notify $ Hit AttackerPlayer damage
-      let e' = e{ enemy_health = enemy_health e - damage }
-      if enemy_health e' <= 0
-        then do
-          liftIO $ notify $ EnemyDied (enemy_name e)
-          fight agent es
-        else fight agent (e':es)
-    GT -> do
-      shouldTryLuck <- liftIO $ tryLuck (AttackerEnemy (enemy_name e))
-      damage <- 
-        if shouldTryLuck
-          then do
-            lucky <- hasLuck
-            return (if lucky then 1 else 3)
-          else return 2
-      liftIO $ notify $ Hit (AttackerEnemy (enemy_name e)) damage
-      modifyAbility (\x -> x - damage) Health
-      health <- getAbility Health
-      if health <= 0
-         then liftIO $ notify $ PlayerDied
-         else fight agent (e:es)
-  where hasLuck = do
-          d1 <- roll
-          liftIO $ notify (Rolled d1)
-          d2 <- roll
-          liftIO $ notify (Rolled d2)
-          luck <- getAbility Luck
-          modifyAbility (\x -> x - 1) Luck                          
-          return $ d1 + d2 <= luck          
-                   
-type Output = [OutputItem]
+data Output = Output String [OutputItem]
 data OutputItem = OutText String
                 | OutDie Int
-                | OutLink PageNum String
+                | OutLink Link String
                 | OutBreak
-                | OutFight [Enemy] (FightAgent IO -> CyoaT IO ())
+                -- | OutFight [Enemy] (FightAgent IO -> CyoaT IO ())
 
 evalPage :: (Functor m, MonadIO m) => CyoaT m Output
 evalPage = do
-  pageNum <- gets player_page
-  (Page _ is) <- asks (!pageNum)
-  (_, w) <- execRWST `flip` () `flip` Map.empty $ do              
-              mapM_ evalPageItem is
-  return w                    
+  fightState <- gets player_fight
+  case fightState of
+    Nothing -> do
+      pageNum <- gets player_page
+      (Page _ is) <- asks (!pageNum)
+      (_, w) <- execRWST `flip` () `flip` Map.empty $ do              
+                     mapM_ evalPageItem is
+      return $ Output (show pageNum ++ ".") w                    
+    Just fs -> do
+      w <- execWriterT fight
+      return $ Output "Csata!" w
 
+fight :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT m) ()
+fight = do
+  last_round <- gets (fight_last_round . fromJust . player_fight)
+  case last_round of
+    Nothing -> return ()
+    Just (FightRound AttackerPlayer luck) -> do
+      damage <- if not luck then return 2
+                  else do
+                    lucky <- hasLuck
+                    return $ if lucky then 4 else 1
+      tell [OutText "Megsebzed ellenfeledet "
+           ,OutText (show damage)
+           ,OutText " pont értékben!"]
+      lift $ modifyFightState (hurtEnemy damage)
+    Just (FightRound AttackerEnemy luck) -> do
+      damage <- if not luck then return 2
+                  else do
+                    lucky <- hasLuck
+                    return $ if lucky then 1 else 3
+      tell [OutText "Ellenfeled megsebez "
+           ,OutText (show damage)
+           ,OutText " pont értékben!"]
+      -- TODO: jatekos serulese
+      
+  enemies <- lift $ gets (fight_enemies . fromJust . player_fight)         
+  let (enemy:_) = enemies
+  forM_ enemies $ \e -> do
+    tell [OutText (show e), OutBreak]
+  tell [OutText "Dobj a szörny nevében!"]
+  enemyAttack <- rollAttack (enemy_agility enemy)
+  tell [OutText "A szörny támadóereje: ", OutText (show enemyAttack)]
+       
+  tell [OutText "Dobj a saját támadásodért!"]
+  playerAttack <- rollAttack =<< (lift $ getAbility Agility)
+  tell [OutText "A Te támadóerőd: ", OutText (show playerAttack)]
+  case enemyAttack `compare` playerAttack of
+    EQ -> do
+      tell [ OutText "Kivédtétek egymás csapását!"
+           , OutLink (ContinueFightLink Nothing) "Folytasd a csatát!"]
+    LT -> do
+      tell [ OutText "Megsebezted a teremtményt."
+           , OutText "Próbára teszed a szerencsédet?"
+           , OutLink (ContinueFightLink (Just (FightRound AttackerPlayer False))) "Nem."
+           , OutText " "
+           , OutLink (ContinueFightLink (Just (FightRound AttackerPlayer True))) "Igen."
+           ]
+    GT -> do
+      tell [ OutText "Megsebez a teremtmény!"
+           , OutText "Próbára teszed a szerencsédet?"
+           , OutLink (ContinueFightLink (Just (FightRound AttackerEnemy False))) "Nem."
+           , OutText " "
+           , OutLink (ContinueFightLink (Just (FightRound AttackerEnemy True))) "Igen."
+           ]
+      
+  where hasLuck = do
+          d1 <- roll
+          d2 <- roll
+          luck <- lift $ getAbility Luck
+          lift $ modifyAbility (\x -> x - 1) Luck                          
+          let lucky = d1 + d2 <= luck
+          tell [OutDie d1, OutDie d2, OutText $ if lucky then "Micsoda mázli!" else "Pech."]
+          return lucky
+        hurtEnemy damage fs@FS{ fight_enemies = (e:es) } = fs{ fight_enemies = (e':es) }
+          where e' = e{ enemy_health = (enemy_health e) - damage }
+           
+rollAttack agility = do    
+    d1 <- roll
+    d2 <- roll
+    tell [OutDie d1, OutDie d2]
+    return $ agility + d1 + d2
+    
 evalPageItem :: (Functor m, MonadIO m) => PageItem -> EvaluatorT m ()
 evalPageItem (Paragraph is) = do
   mapM_ evalPageItem is
@@ -262,7 +354,7 @@ evalPageItem (If c thn els) = do
   b <- evalCond c
   mapM_ evalPageItem (if b then thn else els)        
 evalPageItem (Goto capitalize pageNum) = do
-  tell [OutLink pageNum $ unwords [if capitalize then "Lapozz" else "lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
+  tell [OutLink (PageLink pageNum) $ unwords [if capitalize then "Lapozz" else "lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
   where the | pageNum `elem` [1, 5]  = False
             | pageNum `elem` [2, 3, 4, 6, 7, 8, 9] = True
             | pageNum < 50 = True
@@ -293,15 +385,27 @@ evalPageItem (DieDef name) = do
   tell [OutDie n]
   modify (Map.insert name n)
 evalPageItem (Fight enemies) = do
-  tell [OutFight enemies $ fight `flip` enemies]
+  tell [OutLink (StartFightLink enemies) "Harcolj!"]  
+-- evalPageItem (Fight enemies) = do
+--   tell [OutFight enemies $ fight `flip` enemies]
                                
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
-goto :: Monad m => PageNum -> CyoaT m ()
-goto pageNum =
+goto :: (MonadIO m) => Link -> CyoaT m ()
+goto (PageLink pageNum) =
   modify $ \ playerState -> playerState{ player_page = pageNum }  
-                            
+goto (StartFightLink enemies) =
+  modify $ \ playerState -> playerState{ player_fight = Just fs }
+    where fs = FS { fight_enemies = enemies,
+                    fight_last_round = Nothing }
+goto (ContinueFightLink round) = 
+  modifyFightState (\fs -> fs{ fight_last_round = round })
+
+modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT m ()
+modifyFightState f = do
+  modify (\ps -> ps{ player_fight = Just . f . fromJust $ player_fight ps })
+                              
 stepCyoa :: CyoaT IO a -> [Page] -> PlayerState -> IO (a, PlayerState)
 stepCyoa f pages s = do
   (result, s', output) <- runRWST (unCyoaT f) (listArray (1, 400) pages) s
@@ -317,4 +421,5 @@ mkPlayer = do
               player_counters = Map.empty,
                  
               player_stats = Map.fromList [(Luck, luck), (Agility, agility), (Health, health)],
-              player_page = 1 } -- harc teszt: 73
+              player_fight = Nothing,
+              player_page = 73 } -- harc teszt: 73
