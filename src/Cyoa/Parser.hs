@@ -2,7 +2,7 @@
 module Cyoa.Parser (parsePages) where
 
 import Cyoa.NormalizeXML
-import Cyoa.Engine  
+import Cyoa.PageLang
 
 import Control.Monad.Writer
 import Text.XML.Expat.Tree 
@@ -35,6 +35,7 @@ parseItem node@(Element "inc" [("counter", counter)] _) = Inc counter
 parseItem node@(Element "dec" [("counter", counter)] _) = Dec counter                           
 parseItem node@(Element "clear" [("counter", counter)] _) = Clear counter                           
 parseItem node@(Element "take" [("item", item)] _) = Take item
+parseItem node@(Element "drop" [("item", item)] _) = Drop item
 parseItem node@(Element "damage" [("stat", stat)] _) = Damage (parseStat stat) (parseExpr expr)
   where [expr] = filter isElement $ getChildren node                                                     
 parseItem node@(Element "heal" [("stat", stat)] _) = Heal (parseStat stat) (parseExpr expr)

@@ -9,7 +9,9 @@ import Control.Monad.RWS
 
 import Cyoa.Parser
 import Cyoa.Engine
-
+import Cyoa.PageLang
+import Cyoa.Monad  
+  
 import System.Environment
 import System.Exit
 import System.IO
@@ -37,7 +39,7 @@ insertHeader buf text = do
   textBufferApplyTag buf tag start end
   textBufferInsertAtCursor buf "\n"
 
-refState :: IORef PlayerState
+refState :: IORef GameState
 refState = unsafePerformIO $ newIORef (error "refState")
 
 refPages :: IORef [Page]
@@ -79,7 +81,7 @@ main = do
       exitWith $ ExitFailure 1
   writeIORef refPages pages
 
-  s0 <- mkPlayer             
+  s0 <- mkGameState
   (output, s) <- stepCyoa `flip` pages `flip` s0 $ do
                    evalPage
   writeIORef refState s
