@@ -43,7 +43,8 @@ data Link = PageLink PageNum
           | StartFightLink [Enemy]
           | ContinueFightLink (Maybe FightRound)
                         
-data Output = Output String [OutputItem]
+data Output = OutputClear String [OutputItem]
+            | OutputContinue [OutputItem]
 data OutputItem = OutText String
                 | OutDie Int
                 | OutLink Link String
@@ -58,39 +59,53 @@ evalPage = do
       (Page _ is) <- asks (!pageNum)
       (_, w) <- execRWST `flip` () `flip` Map.empty $ do              
                      mapM_ evalPageItem is
-      return $ Output (show pageNum ++ ".") w                    
+      return $ OutputClear (show pageNum ++ ".") w                    
     Just fs -> do
       w <- execWriterT fight
-      return $ Output "Csata!" w
+      return $ OutputContinue w
 
-fight :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT m) ()
-fight = do
+applyLastRound :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT m) ()
+applyLastRound = do
   last_round <- gets (fight_last_round . fromJust . fight_state)
   case last_round of
     Nothing -> return ()
     Just (FightRound AttackerPlayer luck) -> do
       damage <- if not luck then return 2
-                  else do
-                    lucky <- hasLuck
-                    return $ if lucky then 4 else 1
+                  else ifLucky (return 4) (return 1)
       tell [OutText "Megsebzed ellenfeledet "
            ,OutText (show damage)
-           ,OutText " pont értékben!"]
-      lift $ modifyFightState (hurtEnemy damage)
+           ,OutText " pont értékben! "]
+      hurtEnemy damage
     Just (FightRound AttackerEnemy luck) -> do
       damage <- if not luck then return 2
-                  else do
-                    lucky <- hasLuck
-                    return $ if lucky then 1 else 3
+                  else ifLucky (return 1) (return 3)
       tell [OutText "Ellenfeled megsebez "
            ,OutText (show damage)
-           ,OutText " pont értékben!"]
+           ,OutText " pont értékben! "]
       -- TODO: jatekos serulese
       
-  enemies <- lift $ gets (fight_enemies . fromJust . fight_state) 
-  let (enemy:_) = enemies
-  forM_ enemies $ \e -> do
-    tell [OutText (show e), OutBreak]
+  where
+    ifLucky thn els = do
+      d1 <- roll
+      d2 <- roll
+      luck <- lift $ getAbility Luck
+      lift $ modifyAbility (\x -> x - 1) Luck                          
+      let lucky = d1 + d2 <= luck
+      tell [OutDie d1, OutDie d2, OutText $ if lucky then "Micsoda mázli!" else "Pech."]
+      if lucky then thn else els
+
+    hurtEnemy damage = do
+      (e:es) <- lift $ gets $ fight_enemies . fromJust . fight_state
+      let e' = e{ enemy_health = (enemy_health e) - damage }
+      if enemy_health e' <= 0
+        then do
+          lift $ modifyFightState $ \fs -> fs{ fight_enemies = es }
+          tell [ OutText $ unwords ["A(z)", enemy_name e, "holtan dől össze."] ] -- TODO: A(z)
+        else 
+          lift $ modifyFightState $ \fs -> fs{ fight_enemies = (e':es) }
+
+calculateAttack :: (Functor m, MonadIO m) => Enemy -> WriterT [OutputItem] (CyoaT m) ()
+calculateAttack enemy = do
   tell [OutText "Dobj a szörny nevében!"]
   enemyAttack <- rollAttack (enemy_agility enemy)
   tell [OutText "A szörny támadóereje: ", OutText (show enemyAttack)]
@@ -99,34 +114,37 @@ fight = do
   playerAttack <- rollAttack =<< (lift $ getAbility Agility)
   tell [OutText "A Te támadóerőd: ", OutText (show playerAttack)]
   case enemyAttack `compare` playerAttack of
-    EQ -> do
+    EQ -> 
       tell [ OutText "Kivédtétek egymás csapását!"
            , OutLink (ContinueFightLink Nothing) "Folytasd a csatát!"]
     LT -> do
-      tell [ OutText "Megsebezted a teremtményt."
-           , OutText "Próbára teszed a szerencsédet?"
-           , OutLink (ContinueFightLink (Just (FightRound AttackerPlayer False))) "Nem."
-           , OutText " "
-           , OutLink (ContinueFightLink (Just (FightRound AttackerPlayer True))) "Igen."
-           ]
+      tell [OutText "Megsebezted a teremtményt."]
+      tellTryLuck AttackerPlayer
     GT -> do
-      tell [ OutText "Megsebez a teremtmény!"
-           , OutText "Próbára teszed a szerencsédet?"
-           , OutLink (ContinueFightLink (Just (FightRound AttackerEnemy False))) "Nem."
-           , OutText " "
-           , OutLink (ContinueFightLink (Just (FightRound AttackerEnemy True))) "Igen."
-           ]
+      tell [OutText "Megsebez a teremtmény!"]
+      tellTryLuck AttackerEnemy
+        
+  where tellTryLuck attacker = do
+          tell [ OutText "Próbára teszed a szerencsédet?"
+               , OutLink (ContinueFightLink (Just (FightRound attacker False))) "Nem."
+               , OutText " "
+               , OutLink (ContinueFightLink (Just (FightRound attacker True))) "Igen."
+               ]
+                     
+fight :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT m) ()
+fight = do
+  applyLastRound
+  
+  enemies <- lift $ gets (fight_enemies . fromJust . fight_state)
+  case enemies of
+    [] -> do
+      modify $ \gs -> gs{ fight_state = Nothing }
       
-  where hasLuck = do
-          d1 <- roll
-          d2 <- roll
-          luck <- lift $ getAbility Luck
-          lift $ modifyAbility (\x -> x - 1) Luck                          
-          let lucky = d1 + d2 <= luck
-          tell [OutDie d1, OutDie d2, OutText $ if lucky then "Micsoda mázli!" else "Pech."]
-          return lucky
-        hurtEnemy damage fs@FS{ fight_enemies = (e:es) } = fs{ fight_enemies = (e':es) }
-          where e' = e{ enemy_health = (enemy_health e) - damage }
+    (enemy:_) -> do
+      -- Debug kimenet
+      forM_ enemies $ \e -> do
+        tell [OutText (show e), OutBreak]
+      calculateAttack enemy
            
 rollAttack agility = do    
     d1 <- roll

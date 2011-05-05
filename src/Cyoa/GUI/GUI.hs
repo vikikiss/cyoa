@@ -17,17 +17,17 @@ import System.Exit
 import System.IO
 
 import Data.IORef
-import System.IO.Unsafe
-
+import System.IO.Unsafe  
+  
 -- TODO: always insert text to end of buffer  
 insertTextToBuf buf text = do
   before <- textMarkNew Nothing True
-  textBufferAddMark buf before =<< textBufferGetIterAtMark buf =<< textBufferGetInsert buf
-  textBufferInsertAtCursor buf text
-  after <- textBufferGetInsert buf  
-    
+  do            
+    iterEnd <- textBufferGetEndIter buf
+    textBufferAddMark buf before iterEnd  
+    textBufferInsert buf iterEnd text
   start <- textBufferGetIterAtMark buf before
-  end <- textBufferGetIterAtMark buf after
+  end <- textBufferGetEndIter buf
   textBufferDeleteMark buf before
   return (start, end)
 
@@ -108,16 +108,19 @@ main = do
   widgetShowAll wnd  
   mainGUI
 
-render buf view (Output title outItems) = do
+render buf view (OutputClear title outItems) = do
   textBufferSetText buf ""
   insertHeader buf title
+  render buf view (OutputContinue outItems)
+  
+render buf view (OutputContinue outItems) = do
   display outItems
     where
-      display (OutBreak:os) = textBufferInsertAtCursor buf "\n" >> display os
-      display ((OutText s):os) = textBufferInsertAtCursor buf s >> display os
+      display (OutBreak:os) = insertTextToBuf buf "\n" >> display os
+      display ((OutText s):os) = insertTextToBuf buf s >> display os
       display ((OutLink link s):os) = insertLinkToBuf buf view s link >> display os
       display ((OutDie n):os) = do
-        anchor <- textBufferCreateChildAnchor buf =<< textBufferGetIterAtMark buf =<< textBufferGetInsert buf
+        anchor <- textBufferCreateChildAnchor buf =<< textBufferGetEndIter buf
         roll <- buttonNewWithLabel "Dobj"
         on roll buttonActivated $ do
           set roll [widgetSensitive := False, buttonLabel := show n]              

@@ -51,7 +51,7 @@ newtype CyoaT m a = CyoaT { unCyoaT :: RWST (Array PageNum Page) () GameState m 
 --   gets :: (Monad m) => (PlayerState -> a) -> CyoaT m a
 --   put :: (Monad m) => PlayerState -> CyoaT m ()
 --   modify :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
-  
+
 modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
 modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
 
