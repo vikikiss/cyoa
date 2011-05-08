@@ -21,6 +21,7 @@ import System.IO.Unsafe
 
 data GUICtxt = GUICtxt { gui_buf :: TextBuffer
                        , gui_view :: TextView
+                       , gui_label_health :: Label
                        }
 
 type GUI a = ReaderT GUICtxt IO a             
@@ -60,10 +61,10 @@ refLinkCount :: IORef Int
 refLinkCount = unsafePerformIO $ newIORef (error "refLinkCount")
            
 stepEngine f = do
-  s <- readIORef refState
-  pages <- readIORef refPages
-  (x, s') <- stepCyoa f pages s
-  writeIORef refState s'
+  s <- lift $ readIORef refState
+  pages <- lift $ readIORef refPages
+  (x, s') <- lift $ stepCyoa f pages s
+  lift $ writeIORef refState s'
   return x
            
 insertLinkToBuf text link = do
@@ -81,9 +82,9 @@ insertLinkToBuf text link = do
       case e of
         Button{} -> when (eventClick e == ReleaseClick) $ do
                       linkCount' <- readIORef refLinkCount
-                      when (linkCount == linkCount') $ do
+                      when (linkCount == linkCount') $ runReaderT `flip` ctx $ do
                         output <- stepEngine (goto link >> evalPage)
-                        runReaderT (render output) ctx
+                        render output
         Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
         _ -> return ()
     -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
@@ -138,11 +139,13 @@ main = do
   containerAdd scrollwin tview                          
 
   statusbar <- statusbarNew
-  do
+  label_health <- do
     hbox <- hBoxNew False 0
     containerAdd hbox =<< imageNewFromFile "heart_icon.png"
-    containerAdd hbox =<< labelNew (Just "12")
+    label <- labelNew Nothing
+    containerAdd hbox label
     boxPackStart statusbar hbox PackNatural 0
+    return label
                
   vbox <- vBoxNew False 0
   containerAdd vbox scrollwin
@@ -156,7 +159,8 @@ main = do
   (output, s) <- stepCyoa `flip` pages `flip` s0 $ do
                    evalPage
   writeIORef refState s
-  runReaderT (render output) (GUICtxt buf tview)
+  runReaderT `flip` (GUICtxt buf tview label_health) $ do         
+    render output
   mainGUI
 
 render (OutputClear title outItems) = do
@@ -164,10 +168,13 @@ render (OutputClear title outItems) = do
   lift $ writeIORef refLinkCount 0
   lift $ textBufferSetText buf ""
   insertHeader title
-  render (OutputContinue outItems)
-  
+  render (OutputContinue outItems)  
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
+  health_label <- asks gui_label_health
+  health <- stepEngine (getAbility Health)
+  lift $ labelSetText health_label (show health)
+            
   display outItems
     where
       display (OutBreak:os) = insertTextToBuf "\n" >> display os
