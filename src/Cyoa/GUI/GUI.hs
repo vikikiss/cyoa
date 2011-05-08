@@ -18,25 +18,30 @@ import System.IO
 
 import Data.IORef
 import System.IO.Unsafe  
+
+data GUICtxt = GUICtxt { gui_buf :: TextBuffer
+                       , gui_view :: TextView
+                       }
   
 -- TODO: always insert text to end of buffer  
-insertTextToBuf buf text = do
+insertTextToBuf buf view text = do
   before <- textMarkNew Nothing True
   do            
     iterEnd <- textBufferGetEndIter buf
     textBufferAddMark buf before iterEnd  
     textBufferInsert buf iterEnd text
   start <- textBufferGetIterAtMark buf before
-  end <- textBufferGetEndIter buf
+  end <- textBufferGetEndIter buf  
   textBufferDeleteMark buf before
+  Just scrollMark <- textBufferGetMark buf "scroll"
+  -- textBufferMoveMark buf scrollMark end
+  -- textViewScrollMarkOnscreen view scrollMark
+  textViewScrollToMark view scrollMark 0 (Just (0, 0))
   return (start, end)
 
-insertHeader buf text = do
-  (start, end) <- insertTextToBuf buf text
-  tag <- textTagNew Nothing
-  set tag [ textTagScale := 1.6, textTagJustification := JustifyCenter ]
-  textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
-  textBufferApplyTag buf tag start end
+insertHeader buf view text = do
+  (start, end) <- insertTextToBuf buf view text
+  textBufferApplyTagByName buf "header" start end
   textBufferInsertAtCursor buf "\n"
 
 refState :: IORef GameState
@@ -45,6 +50,9 @@ refState = unsafePerformIO $ newIORef (error "refState")
 refPages :: IORef [Page]
 refPages = unsafePerformIO $ newIORef (error "refPages")
 
+refLinkCount :: IORef Int
+refLinkCount = unsafePerformIO $ newIORef (error "refLinkCount")
+           
 stepEngine f = do
   s <- readIORef refState
   pages <- readIORef refPages
@@ -53,14 +61,17 @@ stepEngine f = do
   return x
            
 insertLinkToBuf buf view text link = do
-  (start, end) <- insertTextToBuf buf text
+  linkCount <- readIORef refLinkCount
+  (start, end) <- insertTextToBuf buf view text
   tag <- textTagNew Nothing
   set tag [ textTagForeground := "blue", textTagUnderline := UnderlineSingle ]
   onTextTagEvent tag $ \e iter -> do
     case e of
       Button{} -> when (eventClick e == ReleaseClick) $ do
-                    output <- stepEngine (goto link >> evalPage)
-                    render buf view output
+                    linkCount' <- readIORef refLinkCount
+                    when (linkCount == linkCount') $ do
+                      output <- stepEngine (goto link >> evalPage)
+                      render buf view output
       Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
       _ -> return ()
   -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
@@ -71,7 +82,17 @@ insertLinkToBuf buf view text link = do
   --   return True
   textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
   textBufferApplyTag buf tag start end
-  
+
+setupTextBuf buf = do
+  addTag "header" [ textTagScale := 1.6, textTagJustification := JustifyCenter ]
+  addTag "good" [ textTagForeground := "green" ]
+  addTag "bad" [ textTagForeground := "red" ]         
+    where addTag name attrs = do
+            tag <- textTagNew (Just name)
+            set tag attrs
+            textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
+                     
+             
 main = do
   args <- initGUI
   pages <- case args of
@@ -91,8 +112,14 @@ main = do
     lift $ mainQuit
     return True
     
-  buf <- textBufferNew Nothing    
+  buf <- textBufferNew Nothing
+  setupTextBuf buf
   tview <- textViewNewWithBuffer buf
+
+  scrollMark <- textMarkNew (Just "scroll") False
+  end <- textBufferGetEndIter buf
+  textBufferAddMark buf scrollMark end
+           
   render buf tview output
          
   set tview [textViewWrapMode := WrapWord, textViewPixelsAboveLines := 10,
@@ -102,22 +129,47 @@ main = do
   textViewSetCursorVisible tview False
   
   widgetSetSizeRequest tview 400 600  
-  
-  containerAdd wnd tview
+
+  scrollwin <- scrolledWindowNew Nothing Nothing
+  scrolledWindowSetPolicy scrollwin PolicyNever PolicyAutomatic
+  containerAdd scrollwin tview                          
+
+  statusbar <- statusbarNew
+  do
+    hbox <- hBoxNew False 0
+    containerAdd hbox =<< imageNewFromFile "heart_icon.png"
+    containerAdd hbox =<< labelNew (Just "12")
+    boxPackStart statusbar hbox PackNatural 0
+               
+  vbox <- vBoxNew False 0
+  containerAdd vbox scrollwin
+  containerAdd vbox statusbar
+          
+  containerAdd wnd vbox
   
   widgetShowAll wnd  
   mainGUI
 
 render buf view (OutputClear title outItems) = do
+  writeIORef refLinkCount 0
   textBufferSetText buf ""
-  insertHeader buf title
+  insertHeader buf view title
   render buf view (OutputContinue outItems)
   
 render buf view (OutputContinue outItems) = do
+  modifyIORef refLinkCount succ
   display outItems
     where
-      display (OutBreak:os) = insertTextToBuf buf "\n" >> display os
-      display ((OutText s):os) = insertTextToBuf buf s >> display os
+      display (OutBreak:os) = insertTextToBuf buf view "\n" >> display os
+      display ((OutText a s):os) = do
+        (start, end) <- insertTextToBuf buf view s
+        case a of
+          Nothing -> return ()
+          Just attr -> textBufferApplyTagByName buf tagName start end
+            where tagName = case attr of
+                              Good -> "good"
+                              Bad -> "bad"
+        display os
       display ((OutLink link s):os) = insertLinkToBuf buf view s link >> display os
       display ((OutDie n):os) = do
         anchor <- textBufferCreateChildAnchor buf =<< textBufferGetEndIter buf
@@ -127,6 +179,10 @@ render buf view (OutputContinue outItems) = do
           display os
         widgetShow roll
         textViewAddChildAtAnchor view roll anchor
+        -- Just scrollMark <- textBufferGetMark buf "scroll"
+        -- textViewScrollToMark view scrollMark 0 (Just (0, 0))
+        -- insertTextToBuf buf view " "
+        return ()
       -- display ((OutFight enemies fight):os) = do
       --   textBufferInsertAtCursor buf $ show enemies
       --   let agent = FightAgent (const $ return False) (textBufferInsertAtCursor buf . show)

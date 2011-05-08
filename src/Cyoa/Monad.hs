@@ -17,7 +17,8 @@ import Control.Applicative
 import System.Random
   
 data FightState = FS { fight_enemies :: [Enemy]
-                     , fight_last_round :: Maybe FightRound}
+                     , fight_last_round :: Maybe FightRound
+                     , fight_cont :: ([PageItem], Map Die Int) }
                 deriving (Show)
   
 data PlayerState = PS { player_carries :: Set Item
@@ -103,10 +104,6 @@ data Attacker = AttackerPlayer
               | AttackerEnemy
               deriving Show
 
--- data Link = PageLink PageNum
---           | StartFightLink [Enemy]
---           | ContinueFightLink (Maybe FightRound)
-            
 data FightRound = FightRound Attacker Bool
                 deriving Show
 
