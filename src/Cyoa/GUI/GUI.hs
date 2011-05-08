@@ -22,27 +22,33 @@ import System.IO.Unsafe
 data GUICtxt = GUICtxt { gui_buf :: TextBuffer
                        , gui_view :: TextView
                        }
-  
--- TODO: always insert text to end of buffer  
-insertTextToBuf buf view text = do
-  before <- textMarkNew Nothing True
-  do            
-    iterEnd <- textBufferGetEndIter buf
-    textBufferAddMark buf before iterEnd  
-    textBufferInsert buf iterEnd text
-  start <- textBufferGetIterAtMark buf before
-  end <- textBufferGetEndIter buf  
-  textBufferDeleteMark buf before
-  Just scrollMark <- textBufferGetMark buf "scroll"
-  -- textBufferMoveMark buf scrollMark end
-  -- textViewScrollMarkOnscreen view scrollMark
-  textViewScrollToMark view scrollMark 0 (Just (0, 0))
-  return (start, end)
 
-insertHeader buf view text = do
-  (start, end) <- insertTextToBuf buf view text
-  textBufferApplyTagByName buf "header" start end
-  textBufferInsertAtCursor buf "\n"
+type GUI a = ReaderT GUICtxt IO a             
+  
+-- TODO: always insert text to end of buffer
+insertTextToBuf :: String -> GUI (TextIter, TextIter)
+insertTextToBuf text = do
+  buf <- asks gui_buf
+  view <- asks gui_view
+  lift $ do
+    before <- textMarkNew Nothing True
+    do            
+      iterEnd <- textBufferGetEndIter buf
+      textBufferAddMark buf before iterEnd  
+      textBufferInsert buf iterEnd text
+    start <- textBufferGetIterAtMark buf before
+    end <- textBufferGetEndIter buf  
+    textBufferDeleteMark buf before
+    Just scrollMark <- textBufferGetMark buf "scroll"
+    textViewScrollToMark view scrollMark 0 (Just (0, 0))
+    return (start, end)
+
+insertHeader text = do
+  (start, end) <- insertTextToBuf text
+  buf <- asks gui_buf
+  lift $ do
+    textBufferApplyTagByName buf "header" start end
+    textBufferInsertAtCursor buf "\n"
 
 refState :: IORef GameState
 refState = unsafePerformIO $ newIORef (error "refState")
@@ -60,28 +66,32 @@ stepEngine f = do
   writeIORef refState s'
   return x
            
-insertLinkToBuf buf view text link = do
-  linkCount <- readIORef refLinkCount
-  (start, end) <- insertTextToBuf buf view text
-  tag <- textTagNew Nothing
-  set tag [ textTagForeground := "blue", textTagUnderline := UnderlineSingle ]
-  onTextTagEvent tag $ \e iter -> do
-    case e of
-      Button{} -> when (eventClick e == ReleaseClick) $ do
-                    linkCount' <- readIORef refLinkCount
-                    when (linkCount == linkCount') $ do
-                      output <- stepEngine (goto link >> evalPage)
-                      render buf view output
-      Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
-      _ -> return ()
-  -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
-  -- on tag textTagEvent $ \sender iter -> do
-  --   e <- ask
-  --   lift $ print e
-  --   lift $ putStrLn "Foo"
-  --   return True
-  textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
-  textBufferApplyTag buf tag start end
+insertLinkToBuf text link = do
+  buf <- asks gui_buf
+  ctx <- ask
+  linkCount <- lift $ readIORef refLinkCount                              
+  (start, end) <- insertTextToBuf text
+  lift $ do
+    tag <- textTagNew Nothing         
+    set tag [ textTagForeground := "blue", textTagUnderline := UnderlineSingle ]
+    textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
+    textBufferApplyTag buf tag start end
+                     
+    onTextTagEvent tag $ \e iter -> do
+      case e of
+        Button{} -> when (eventClick e == ReleaseClick) $ do
+                      linkCount' <- readIORef refLinkCount
+                      when (linkCount == linkCount') $ do
+                        output <- stepEngine (goto link >> evalPage)
+                        runReaderT (render output) ctx
+        Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
+        _ -> return ()
+    -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
+    -- on tag textTagEvent $ \sender iter -> do
+    --   e <- ask
+    --   lift $ print e
+    --   lift $ putStrLn "Foo"
+    --   return True
 
 setupTextBuf buf = do
   addTag "header" [ textTagScale := 1.6, textTagJustification := JustifyCenter ]
@@ -102,11 +112,6 @@ main = do
       exitWith $ ExitFailure 1
   writeIORef refPages pages
 
-  s0 <- mkGameState
-  (output, s) <- stepCyoa `flip` pages `flip` s0 $ do
-                   evalPage
-  writeIORef refState s
-
   wnd <- windowNew
   on wnd deleteEvent $ do
     lift $ mainQuit
@@ -120,8 +125,6 @@ main = do
   end <- textBufferGetEndIter buf
   textBufferAddMark buf scrollMark end
            
-  render buf tview output
-         
   set tview [textViewWrapMode := WrapWord, textViewPixelsAboveLines := 10,
              textViewLeftMargin := 10, textViewRightMargin := 10,
              textViewIndent := 10]
@@ -148,44 +151,47 @@ main = do
   containerAdd wnd vbox
   
   widgetShowAll wnd  
+                
+  s0 <- mkGameState
+  (output, s) <- stepCyoa `flip` pages `flip` s0 $ do
+                   evalPage
+  writeIORef refState s
+  runReaderT (render output) (GUICtxt buf tview)
   mainGUI
 
-render buf view (OutputClear title outItems) = do
-  writeIORef refLinkCount 0
-  textBufferSetText buf ""
-  insertHeader buf view title
-  render buf view (OutputContinue outItems)
+render (OutputClear title outItems) = do
+  buf <- asks gui_buf
+  lift $ writeIORef refLinkCount 0
+  lift $ textBufferSetText buf ""
+  insertHeader title
+  render (OutputContinue outItems)
   
-render buf view (OutputContinue outItems) = do
-  modifyIORef refLinkCount succ
+render (OutputContinue outItems) = do
+  lift $ modifyIORef refLinkCount succ
   display outItems
     where
-      display (OutBreak:os) = insertTextToBuf buf view "\n" >> display os
-      display ((OutText a s):os) = do
-        (start, end) <- insertTextToBuf buf view s
+      display (OutBreak:os) = insertTextToBuf "\n" >> display os
+      display ((OutText a s):os) = do        
+        buf <- asks gui_buf
+        (start, end) <- insertTextToBuf s
         case a of
           Nothing -> return ()
-          Just attr -> textBufferApplyTagByName buf tagName start end
+          Just attr -> lift $ textBufferApplyTagByName buf tagName start end
             where tagName = case attr of
                               Good -> "good"
                               Bad -> "bad"
         display os
-      display ((OutLink link s):os) = insertLinkToBuf buf view s link >> display os
+      display ((OutLink link s):os) = insertLinkToBuf s link >> display os
       display ((OutDie n):os) = do
-        anchor <- textBufferCreateChildAnchor buf =<< textBufferGetEndIter buf
-        roll <- buttonNewWithLabel "Dobj"
-        on roll buttonActivated $ do
-          set roll [widgetSensitive := False, buttonLabel := show n]              
-          display os
-        widgetShow roll
-        textViewAddChildAtAnchor view roll anchor
-        -- Just scrollMark <- textBufferGetMark buf "scroll"
-        -- textViewScrollToMark view scrollMark 0 (Just (0, 0))
-        -- insertTextToBuf buf view " "
-        return ()
-      -- display ((OutFight enemies fight):os) = do
-      --   textBufferInsertAtCursor buf $ show enemies
-      --   let agent = FightAgent (const $ return False) (textBufferInsertAtCursor buf . show)
-      --   stepEngine (fight agent)
-      --   display os
+        buf <- asks gui_buf
+        view <- asks gui_view
+        ctx <- ask
+        lift $ do
+          anchor <- textBufferCreateChildAnchor buf =<< textBufferGetEndIter buf
+          roll <- buttonNewWithLabel "Dobj"
+          on roll buttonActivated $ do
+            set roll [widgetSensitive := False, buttonLabel := show n]              
+            runReaderT (display os) ctx
+          widgetShow roll
+          textViewAddChildAtAnchor view roll anchor
       display [] = return ()
