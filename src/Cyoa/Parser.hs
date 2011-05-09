@@ -74,7 +74,7 @@ parseExpr node@(Element "plus" _ _) = parseBin node (:+:)
 parseExpr node@(Element "minus" _ _) = parseBin node (:-:)
 parseExpr node@(Element "mul" _ _) = parseBin node (:*:)
 parseExpr node@(Element "mod" _ _) = parseBin node (:%:)
-parseExpr (Element "score" [("stat", stat)] _) = AbilityQuery (parseStat stat)
+parseExpr (Element "score" [("stat", stat)] _) = StatQuery (parseStat stat)
 parseExpr node@(Element "cond" _ _) =
   let [cond, thn, els] = filter isElement $ getChildren node
   in ECond (parseCond cond) (parseExpr thn) (parseExpr els)

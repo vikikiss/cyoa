@@ -5,10 +5,10 @@ type Flag = String
 type Counter = String
 type Die = String -- Dobokocka
 
-data Ability = Health -- Eletero
-             | Agility -- Ugyesseg
-             | Luck -- Szerencse
-             deriving (Eq, Ord, Show, Read)
+data Stat = Health -- Eletero
+          | Agility -- Ugyesseg
+          | Luck -- Szerencse
+          deriving (Eq, Ord, Show, Read)
 
 type PageNum = Int
 
@@ -20,7 +20,7 @@ data Expr = ELiteral Int
           | DieRef Die
           | ECond Cond Expr Expr -- ?:
           | CounterRef Counter
-          | AbilityQuery Ability
+          | StatQuery Stat
           deriving Show
 
 data Cond = CLiteral Bool
@@ -45,8 +45,8 @@ data PageItem = Paragraph [PageItem]
               | Goto Bool PageNum
               | GotoLucky PageNum PageNum
               | DieDef Die
-              | Heal Ability Expr
-              | Damage Ability Expr
+              | Heal Stat Expr
+              | Damage Stat Expr
               | Take Item
               | Drop Item
               | Inc Counter

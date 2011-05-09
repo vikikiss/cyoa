@@ -172,7 +172,7 @@ render (OutputClear title outItems) = do
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
   health_label <- asks gui_label_health
-  health <- stepEngine (getAbility Health)
+  health <- stepEngine (getStat Health)
   lift $ labelSetText health_label (show health)
             
   display outItems

@@ -5,15 +5,16 @@ import Cyoa.Monad
   
 import Control.Monad.Writer  
 import Control.Monad.RWS  
+import Control.Monad.Cont
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Array
 import Data.Maybe
 import Control.Applicative
   
-type EvaluatorT m a = RWST [PageItem] [OutputItem] (Map Die Int) (CyoaT m) a                         
+type EvaluatorT r m a = RWST [PageItem] [OutputItem] (Map Die Int) (CyoaT r m) a                         
                          
-evalExpr :: (Monad m, Functor m) => Expr -> EvaluatorT m Int
+evalExpr :: (Monad m, Functor m) => Expr -> EvaluatorT r m Int
 evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
 evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
@@ -21,12 +22,12 @@ evalExpr (e :*: f) = (*) <$> evalExpr e <*> evalExpr f
 evalExpr (e :%: f) = mod <$> evalExpr e <*> evalExpr f
 evalExpr (DieRef die) = gets (fromJust . Map.lookup die)
 evalExpr (CounterRef counter) = lift $ getCounter counter                     
-evalExpr (AbilityQuery a) = lift $ getAbility a
+evalExpr (StatQuery a) = lift $ getStat a
 evalExpr (ECond cond thn els) = do
   b <- evalCond cond
   evalExpr (if b then thn else els)
                             
-evalCond :: (Monad m, Functor m) => Cond -> EvaluatorT m Bool
+evalCond :: (Monad m, Functor m) => Cond -> EvaluatorT r m Bool
 evalCond (CLiteral b) = return b
 evalCond (c :||: d) = (||) <$> evalCond c <*> evalCond d
 evalCond (c :&&: d) = (&&) <$> evalCond c <*> evalCond d
@@ -55,20 +56,23 @@ data OutputItem = OutText (Maybe OutputAttr) String
 
 outText = OutText Nothing                  
                   
-evalPage :: (Functor m, MonadIO m) => CyoaT m Output
-evalPage = do
+evalPage :: (Functor m, MonadIO m) => CyoaT r m Output
+evalPage = callCC $ \c -> local (\(_, pages) -> (deathHandler c, pages)) $ do
   fightState <- gets fight_state
   case fightState of
     Nothing -> do
       pageNum <- gets $ player_page . player_state
-      (Page _ is) <- asks (!pageNum)
+      (Page _ is) <- asks $ (!pageNum) . snd
       (_, w) <- execRWST (evalPageItems is) is Map.empty
       return $ OutputClear (show pageNum ++ ".") w                    
     Just fs -> do
       w <- execWriterT fight
       return $ OutputContinue w
+  where deathHandler c = do
+          liftIO $ putStrLn "Meghaltal"
+          c (OutputContinue [OutText (Just Bad) "Kalandod itt végetér."])
 
-applyLastRound :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT m) ()
+applyLastRound :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT r m) ()
 applyLastRound = do
   last_round <- gets (fight_last_round . fromJust . fight_state)
   case last_round of
@@ -89,14 +93,14 @@ applyLastRound = do
            , outText "Ellenfeled megsebez "
            , outText (show damage)
            , outText " pont értékben! "]
-      -- TODO: jatekos serulese
+      lift $ modifyStat (\hp -> hp - damage) Health
       
   where
     ifLucky thn els = do
       d1 <- roll
       d2 <- roll
-      luck <- lift $ getAbility Luck
-      lift $ modifyAbility (\x -> x - 1) Luck                          
+      luck <- lift $ getStat Luck
+      lift $ modifyStat (\x -> x - 1) Luck                          
       let lucky = d1 + d2 <= luck
       tell [OutDie d1, OutDie d2, if lucky then OutText (Just Good) "Micsoda mázli! " else OutText (Just Bad) "Pech. "]
       if lucky then thn else els
@@ -111,14 +115,14 @@ applyLastRound = do
         else 
           lift $ modifyFightState $ \fs -> fs{ fight_enemies = (e':es) }
 
-calculateAttack :: (Functor m, MonadIO m) => Enemy -> WriterT [OutputItem] (CyoaT m) ()
+calculateAttack :: (Functor m, MonadIO m) => Enemy -> WriterT [OutputItem] (CyoaT r m) ()
 calculateAttack enemy = do
   tell [outText "Dobj a szörny nevében! "]
   enemyAttack <- rollAttack (enemy_agility enemy)
   tell [outText " A szörny támadóereje: ", outText (show enemyAttack), OutBreak]
        
   tell [outText "Dobj a saját támadásodért! "]
-  playerAttack <- rollAttack =<< (lift $ getAbility Agility)
+  playerAttack <- rollAttack =<< (lift $ getStat Agility)
   tell [outText " A Te támadóerőd: ", outText (show playerAttack), OutBreak]
   case enemyAttack `compare` playerAttack of
     EQ -> 
@@ -139,7 +143,7 @@ calculateAttack enemy = do
                , OutLink (ContinueFightLink (Just (FightRound attacker True))) "Igen."
                ]
                      
-fight :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT m) ()
+fight :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT r m) ()
 fight = do
   applyLastRound
 
@@ -165,13 +169,13 @@ rollAttack agility = do
     tell [OutDie d1, OutDie d2]
     return $ agility + d1 + d2
 
-evalPageItems :: (Functor m, MonadIO m) => [PageItem] -> EvaluatorT m ()
+evalPageItems :: (Functor m, MonadIO m) => [PageItem] -> EvaluatorT r m ()
 evalPageItems [] = return ()
 evalPageItems (i:is) = do
   suspend <- local (const is) $ evalPageItem i
   if suspend then return () else evalPageItems is
            
-evalPageItem :: (Functor m, MonadIO m) => PageItem -> EvaluatorT m Bool
+evalPageItem :: (Functor m, MonadIO m) => PageItem -> EvaluatorT r m Bool
 evalPageItem (Paragraph is) = do
   mapM_ evalPageItem is
   tell [OutBreak]
@@ -197,19 +201,19 @@ evalPageItem (Drop item) = lift $ dropItem item >> return False
 evalPageItem (GotoLucky refYes refNo) = do
   d1 <- roll
   d2 <- roll
-  luck <- lift $ getAbility Luck
+  luck <- lift $ getStat Luck
   let page' | d1 + d2 <= luck = refYes
             | otherwise = refNo
-  lift $ modifyAbility (\x -> x - 1) Luck
+  lift $ modifyStat pred Luck
   tell [outText "Tedd próbára SZERENCSÉDET!", OutDie d1, OutDie d2]
   evalPageItem (Goto True page')
-evalPageItem (Damage ability expr) = do
+evalPageItem (Damage stat expr) = do
   value <- evalExpr expr
-  lift $ modifyAbility (\x -> x - value) ability
+  lift $ modifyStat (\x -> x - value) stat
   return False
-evalPageItem (Heal ability expr) = do
+evalPageItem (Heal stat expr) = do
   value <- evalExpr expr
-  lift $ modifyAbility (+value) ability
+  lift $ modifyStat (+value) stat
   return False
 evalPageItem (Set flag) = lift $ setFlag flag >> return False
 evalPageItem (DieDef name) = do
@@ -225,7 +229,7 @@ evalPageItem (Fight enemies) = do
 -- evalPageItem (Fight enemies) = do
 --   tell [OutFight enemies $ fight `flip` enemies]
                                
-goto :: (MonadIO m) => Link -> CyoaT m ()
+goto :: (MonadIO m) => Link -> CyoaT r m ()
 goto (PageLink pageNum) =
   modifyPlayerState $ \ps -> ps{ player_page = pageNum }  
 goto (StartFightLink enemies is dice) =

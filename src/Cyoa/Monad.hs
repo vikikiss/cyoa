@@ -7,6 +7,7 @@ import Prelude hiding (take, drop)
 
 import Control.Monad.Writer  
 import Control.Monad.RWS  
+import Control.Monad.Cont
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Map (Map)
@@ -24,7 +25,7 @@ data FightState = FS { fight_enemies :: [Enemy]
 data PlayerState = PS { player_carries :: Set Item
                       , player_flags :: Set Flag
                       , player_counters :: Map Counter Int                                           
-                      , player_stats :: Map Ability Int
+                      , player_stats :: Map Stat (Int, Int) -- (current, initial)
                       , player_page :: PageNum
                       }
                  deriving (Show)
@@ -34,9 +35,10 @@ data GameState = GS { player_state :: PlayerState
                     }
                deriving (Show)
                           
-newtype CyoaT m a = CyoaT { unCyoaT :: RWST (Array PageNum Page) () GameState m a }
-  deriving (Monad, Functor, MonadTrans, MonadIO, 
-            MonadState GameState, MonadReader (Array PageNum Page),
+newtype CyoaT r m a = CyoaT { unCyoaT :: RWST (CyoaT r m (), Array PageNum Page) () GameState (ContT r m) a }
+  deriving (Monad, Functor, MonadIO,
+            MonadCont,
+            MonadState GameState, MonadReader (CyoaT r m (), Array PageNum Page),
             Applicative)
 
 -- RWS(T) muveletei:
@@ -53,53 +55,67 @@ newtype CyoaT m a = CyoaT { unCyoaT :: RWST (Array PageNum Page) () GameState m 
 --   put :: (Monad m) => PlayerState -> CyoaT m ()
 --   modify :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
 
-modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
+modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT r m ()
 modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
 
-modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT m ()
+modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT r m ()
 modifyFightState f = modify $ \gs -> gs{ fight_state = f' (fight_state gs) }
   where f' = Just . f. fromJust
      
-carries :: (Monad m) => Item -> CyoaT m Bool
+carries :: (Monad m) => Item -> CyoaT r m Bool
 carries item =
   gets $ Set.member item . player_carries . player_state
 
-takeItem :: (Monad m) => Item -> CyoaT m ()
+takeItem :: (Monad m) => Item -> CyoaT r m ()
 takeItem item =
   modifyPlayerState $ \ps -> ps { player_carries = Set.insert item (player_carries ps) }
         
-dropItem :: (Monad m) => Item -> CyoaT m ()
+dropItem :: (Monad m) => Item -> CyoaT r m ()
 dropItem item =
   modifyPlayerState $ \ps -> ps { player_carries = Set.delete item (player_carries ps) }
 
-flagSet :: (Monad m) => Flag -> CyoaT m Bool
+flagSet :: (Monad m) => Flag -> CyoaT r m Bool
 flagSet flag = gets $ Set.member flag . player_flags . player_state
 
-setFlag :: (Monad m) => Flag -> CyoaT m ()
+setFlag :: (Monad m) => Flag -> CyoaT r m ()
 setFlag flag =        
   modifyPlayerState $ \ps -> ps { player_flags = Set.insert flag (player_flags ps) }
 
-resetFlag :: (Monad m) => Flag -> CyoaT m ()
+resetFlag :: (Monad m) => Flag -> CyoaT r m ()
 resetFlag flag =        
   modifyPlayerState $ \ps -> ps { player_flags = Set.delete flag (player_flags ps) }
            
-getCounter :: (Monad m) => Counter -> CyoaT m Int
+getCounter :: (Monad m) => Counter -> CyoaT r m Int
 getCounter counter = do
   lookup <- gets $ Map.lookup counter . player_counters . player_state
   return $ 0 `fromMaybe` lookup
               
-modifyCounter :: (Monad m) => (Int -> Int) -> Counter -> CyoaT m ()
+modifyCounter :: (Monad m) => (Int -> Int) -> Counter -> CyoaT r m ()
 modifyCounter f counter = do
   modifyPlayerState $ \ps -> ps { player_counters = Map.alter f' counter (player_counters ps) }
   where f' mx = Just $ f $ 0 `fromMaybe` mx
         
-getAbility :: (Monad m) => Ability -> CyoaT m Int
-getAbility a = gets $ fromJust . Map.lookup a . player_stats . player_state
-              
-modifyAbility :: (Monad m) => (Int -> Int) -> Ability -> CyoaT m ()
-modifyAbility f a = modifyPlayerState $ \ps -> ps { player_stats = Map.alter f' a (player_stats ps) }
-  where f' = Just . f . fromJust
+getStat :: (Monad m) => Stat -> CyoaT r m Int
+getStat a = gets $ fst . fromJust . Map.lookup a . player_stats . player_state
 
+die :: (Monad m) => CyoaT r m ()
+die = do
+  deathHandler <- asks fst
+  deathHandler
+            
+modifyStat :: (Monad m) => (Int -> Int) -> Stat -> CyoaT r m ()
+modifyStat f stat = do
+  modifyPlayerState $ \ps -> ps { player_stats = Map.alter (Just . f' . fromJust) stat (player_stats ps) }
+  when (stat == Health) $ do
+    health <- getStat Health
+    when (health == 0) die  
+                             
+  where f' (current, initial) = (new, initial)
+          where new = clamp (0, initial) (f current)
+        clamp (low, high) x | x < low = low
+                            | x > high = high
+                            | otherwise = x
+                      
 data Attacker = AttackerPlayer
               | AttackerEnemy
               deriving Show
@@ -110,11 +126,11 @@ data FightRound = FightRound Attacker Bool
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
-stepCyoa :: CyoaT IO a -> [Page] -> GameState -> IO (a, GameState)
+stepCyoa :: CyoaT (a, GameState) IO a -> [Page] -> GameState -> IO (a, GameState)
 stepCyoa f pages gs = do
-  (result, gs', output) <- runRWST (unCyoaT f) (listArray (1, 400) pages) gs
-  return (result, gs')
-
+  runContT (runRWST (unCyoaT f) (return (), pageArray) gs) $ \(result, gs', _) -> return (result, gs')
+  where pageArray = listArray (1, 400) pages
+  
 mkGameState :: IO GameState
 mkGameState = do
   ps <- mkPlayer
@@ -123,12 +139,16 @@ mkGameState = do
          
 mkPlayer :: IO PlayerState
 mkPlayer = do
-  agility <- (6+) <$> roll
-  health <- (12+) <$> ((+) <$> roll <*> roll)
+  -- agility <- (6+) <$> roll
+  -- health <- (12+) <$> ((+) <$> roll <*> roll)
+  agility <- return 1
+  health <- return 1
   luck <- (6+) <$> roll            
   return PS { player_carries = Set.empty,
               player_flags = Set.empty,
               player_counters = Map.empty,
                  
-              player_stats = Map.fromList [(Luck, luck), (Agility, agility), (Health, health)],
-              player_page = 73 } -- harc teszt: 73
+              player_stats = Map.fromList [ (Luck, (luck, luck))
+                                          , (Agility, (agility, agility))
+                                          , (Health, (health, health))],
+              player_page = 1 } -- harc teszt: 73
