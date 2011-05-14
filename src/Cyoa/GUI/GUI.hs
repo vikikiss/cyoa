@@ -59,13 +59,14 @@ refPages = unsafePerformIO $ newIORef (error "refPages")
 
 refLinkCount :: IORef Int
 refLinkCount = unsafePerformIO $ newIORef (error "refLinkCount")
-           
+
+stepEngine :: CyoaT IO a -> GUI (Either String a, Output)
 stepEngine f = do
   s <- lift $ readIORef refState
   pages <- lift $ readIORef refPages
-  (x, s') <- lift $ stepCyoa f pages s
+  (x, s', w) <- lift $ stepCyoa f pages s
   lift $ writeIORef refState s'
-  return x
+  return (x, w)
            
 insertLinkToBuf text link = do
   buf <- asks gui_buf
@@ -83,7 +84,7 @@ insertLinkToBuf text link = do
         Button{} -> when (eventClick e == ReleaseClick) $ do
                       linkCount' <- readIORef refLinkCount
                       when (linkCount == linkCount') $ runReaderT `flip` ctx $ do
-                        output <- stepEngine (goto link >> evalPage)
+                        (_, output) <- stepEngine (goto link >> evalPage)
                         render output
         Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
         _ -> return ()
@@ -156,8 +157,9 @@ main = do
   widgetShowAll wnd  
                 
   s0 <- mkGameState
-  (output, s) <- stepCyoa `flip` pages `flip` s0 $ do
-                   evalPage
+  -- TODO: stepEngine
+  (_, s, output) <- stepCyoa `flip` pages `flip` s0 $ do
+                      evalPage
   writeIORef refState s
   runReaderT `flip` (GUICtxt buf tview label_health) $ do         
     render output
@@ -172,7 +174,7 @@ render (OutputClear title outItems) = do
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
   health_label <- asks gui_label_health
-  health <- stepEngine (getStat Health)
+  (Right health, _) <- stepEngine (getStat Health)
   lift $ labelSetText health_label (show health)
             
   display outItems

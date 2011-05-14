@@ -1,20 +1,41 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, FlexibleContexts #-}
 module Cyoa.Engine where
 
 import Cyoa.PageLang
 import Cyoa.Monad  
   
-import Control.Monad.Writer  
-import Control.Monad.RWS  
-import Control.Monad.Cont
+import Control.Monad.RWS
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Array
 import Data.Maybe
 import Control.Applicative
-  
-type EvaluatorT r m a = RWST [PageItem] [OutputItem] (Map Die Int) (CyoaT r m) a                         
-                         
-evalExpr :: (Monad m, Functor m) => Expr -> EvaluatorT r m Int
+
+newtype EvaluatorT m a = EvaluatorT { unEvaluatorT :: RWST [PageItem] () (Map Die Int) m a }
+  deriving (Monad, MonadReader [PageItem], MonadState (Map Die Int), MonadIO, Applicative, Functor, MonadTrans)           
+
+instance (MonadWriter w m) => MonadWriter w (EvaluatorT m) where
+  tell = lift . tell
+  listen f = do
+    r <- ask
+    s <- get
+    ((x, s', _), w) <- (lift . listen) (runRWST (unEvaluatorT f) r s)
+    put s'
+    return (x, w)
+
+  pass f = do
+    r <- ask
+    s <- get
+    (x, s') <- lift . pass $ do
+                 ((x, xform), s', _) <- runRWST (unEvaluatorT f) r s
+                 return ((x, s'), xform)
+    put s'
+    return x
+
+emit :: (MonadWriter Output m) => [OutputItem] -> m ()
+emit = tell . OutputContinue    
+    
+evalExpr :: (Monad m, Functor m) => Expr -> EvaluatorT (CyoaT m) Int
 evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
 evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
@@ -27,7 +48,7 @@ evalExpr (ECond cond thn els) = do
   b <- evalCond cond
   evalExpr (if b then thn else els)
                             
-evalCond :: (Monad m, Functor m) => Cond -> EvaluatorT r m Bool
+evalCond :: (Monad m, Functor m) => Cond -> EvaluatorT (CyoaT m) Bool
 evalCond (CLiteral b) = return b
 evalCond (c :||: d) = (||) <$> evalCond c <*> evalCond d
 evalCond (c :&&: d) = (&&) <$> evalCond c <*> evalCond d
@@ -40,39 +61,20 @@ evalCond (CNot c) = not <$> evalCond c
 evalCond (Carry item) = lift $ carries item                    
 evalCond (FlagSet flag) = lift $ flagSet flag
                       
-data Link = PageLink PageNum
-          | StartFightLink [Enemy] [PageItem] (Map Die Int)
-          | ContinueFightLink (Maybe FightRound)
-                        
-data Output = OutputClear String [OutputItem]
-            | OutputContinue [OutputItem]
-data OutputAttr = Good
-                | Bad
-                deriving Show
-data OutputItem = OutText (Maybe OutputAttr) String
-                | OutDie Int
-                | OutLink Link String
-                | OutBreak
-
-outText = OutText Nothing                  
-                  
-evalPage :: (Functor m, MonadIO m) => CyoaT r m Output
-evalPage = callCC $ \c -> local (\(_, pages) -> (deathHandler c, pages)) $ do
+evalPage :: (Functor m, MonadIO m) => CyoaT m ()
+evalPage = do
   fightState <- gets fight_state
   case fightState of
     Nothing -> do
       pageNum <- gets $ player_page . player_state
-      (Page _ is) <- asks $ (!pageNum) . snd
-      (_, w) <- execRWST (evalPageItems is) is Map.empty
-      return $ OutputClear (show pageNum ++ ".") w                    
+      (Page _ is) <- asks (!pageNum)
+      tell $ OutputClear (show pageNum ++ ".") []
+      execRWST (unEvaluatorT $ evalPageItems is) is Map.empty
+      return ()
     Just fs -> do
-      w <- execWriterT fight
-      return $ OutputContinue w
-  where deathHandler c = do
-          liftIO $ putStrLn "Meghaltal"
-          c (OutputContinue [OutText (Just Bad) "Kalandod itt végetér."])
+      fight      
 
-applyLastRound :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT r m) ()
+applyLastRound :: (Functor m, MonadIO m) => CyoaT m ()
 applyLastRound = do
   last_round <- gets (fight_last_round . fromJust . fight_state)
   case last_round of
@@ -80,113 +82,117 @@ applyLastRound = do
     Just (FightRound AttackerPlayer luck) -> do
       damage <- if not luck then return 2
                   else ifLucky (return 4) (return 1)
-      tell [ OutBreak
+      emit [ OutBreak
            , outText "Megsebzed ellenfeledet "
            , outText (show damage)
-           , outText " pont értékben! "]
+           , outText " pont értékben! "
+           ]
       hurtEnemy damage
-      tell [ OutBreak ]
+      emit [ OutBreak ]
     Just (FightRound AttackerEnemy luck) -> do
       damage <- if not luck then return 2
                   else ifLucky (return 1) (return 3)
-      tell [ OutBreak
+      emit [ OutBreak
            , outText "Ellenfeled megsebez "
            , outText (show damage)
-           , outText " pont értékben! "]
-      lift $ modifyStat (\hp -> hp - damage) Health
+           , outText " pont értékben! "
+           ]
+      modifyStat (\hp -> hp - damage) Health
       
   where
     ifLucky thn els = do
       d1 <- roll
       d2 <- roll
-      luck <- lift $ getStat Luck
-      lift $ modifyStat (\x -> x - 1) Luck                          
+      luck <- getStat Luck
+      modifyStat (\x -> x - 1) Luck                          
       let lucky = d1 + d2 <= luck
-      tell [OutDie d1, OutDie d2, if lucky then OutText (Just Good) "Micsoda mázli! " else OutText (Just Bad) "Pech. "]
+      emit [ OutDie d1
+           , OutDie d2
+           , if lucky then OutText (Just Good) "Micsoda mázli! " else OutText (Just Bad) "Pech. "
+           ]
       if lucky then thn else els
 
     hurtEnemy damage = do
-      (e:es) <- lift $ gets $ fight_enemies . fromJust . fight_state
+      (e:es) <- gets $ fight_enemies . fromJust . fight_state
       let e' = e{ enemy_health = (enemy_health e) - damage }
       if enemy_health e' <= 0
         then do
-          lift $ modifyFightState $ \fs -> fs{ fight_enemies = es }
-          tell [ outText $ unwords ["A(z)", enemy_name e, "holtan dől össze."] ] -- TODO: A(z)
+          modifyFightState $ \fs -> fs{ fight_enemies = es }
+          emit [ outText $ unwords ["A(z)", enemy_name e, "holtan dől össze."] ] -- TODO: A(z)
         else 
-          lift $ modifyFightState $ \fs -> fs{ fight_enemies = (e':es) }
+          modifyFightState $ \fs -> fs{ fight_enemies = (e':es) }
 
-calculateAttack :: (Functor m, MonadIO m) => Enemy -> WriterT [OutputItem] (CyoaT r m) ()
+calculateAttack :: (Functor m, MonadIO m) => Enemy -> CyoaT m ()
 calculateAttack enemy = do
-  tell [outText "Dobj a szörny nevében! "]
+  emit [outText "Dobj a szörny nevében! "]
   enemyAttack <- rollAttack (enemy_agility enemy)
-  tell [outText " A szörny támadóereje: ", outText (show enemyAttack), OutBreak]
+  emit [outText " A szörny támadóereje: ", outText (show enemyAttack), OutBreak]
        
-  tell [outText "Dobj a saját támadásodért! "]
-  playerAttack <- rollAttack =<< (lift $ getStat Agility)
-  tell [outText " A Te támadóerőd: ", outText (show playerAttack), OutBreak]
+  emit [outText "Dobj a saját támadásodért! "]
+  playerAttack <- rollAttack =<< (getStat Agility)
+  emit [outText " A Te támadóerőd: ", outText (show playerAttack), OutBreak]
   case enemyAttack `compare` playerAttack of
     EQ -> 
-      tell [ outText "Kivédtétek egymás csapását! "
+      emit [ outText "Kivédtétek egymás csapását! "
            , OutLink (ContinueFightLink Nothing) "Folytasd a csatát!"]
     LT -> do
-      tell [OutText (Just Good) "Megsebezted a teremtményt. "]
-      tellTryLuck AttackerPlayer
+      emit [OutText (Just Good) "Megsebezted a teremtményt. "]
+      emitTryLuck AttackerPlayer
     GT -> do
-      tell [OutText (Just Bad) "Megsebez a teremtmény! "]
-      tellTryLuck AttackerEnemy
+      emit [OutText (Just Bad) "Megsebez a teremtmény! "]
+      emitTryLuck AttackerEnemy
         
-  where tellTryLuck attacker = do
-          tell [ OutBreak
+  where emitTryLuck attacker = do
+          emit [ OutBreak
                , outText "Próbára teszed a szerencsédet? "
                , OutLink (ContinueFightLink (Just (FightRound attacker False))) "Nem."
                , outText " "
                , OutLink (ContinueFightLink (Just (FightRound attacker True))) "Igen."
                ]
                      
-fight :: (Functor m, MonadIO m) => WriterT [OutputItem] (CyoaT r m) ()
+fight :: (Functor m, MonadIO m) => CyoaT m ()
 fight = do
   applyLastRound
 
-  fs <- lift $ gets $ fromJust . fight_state
+  fs <- gets $ fromJust . fight_state
   let enemies = fight_enemies fs
   case enemies of
     [] -> do
       let (is, dice) = fight_cont fs
       modify $ \gs -> gs{ fight_state = Nothing }
-      (_, w) <- lift $ execRWST (evalPageItems is) is dice
-      tell w
+      execRWST (unEvaluatorT $ evalPageItems is) is dice
       return ()
       
     (enemy:_) -> do
       -- Debug kimenet
       forM_ enemies $ \e -> do
-        tell [outText (show e), OutBreak]
+        emit [outText (show e), OutBreak]
       calculateAttack enemy
            
 rollAttack agility = do    
     d1 <- roll
     d2 <- roll
-    tell [OutDie d1, OutDie d2]
+    emit [OutDie d1, OutDie d2]
     return $ agility + d1 + d2
 
-evalPageItems :: (Functor m, MonadIO m) => [PageItem] -> EvaluatorT r m ()
+evalPageItems :: (Functor m, MonadIO m) => [PageItem] -> EvaluatorT (CyoaT m) ()
 evalPageItems [] = return ()
 evalPageItems (i:is) = do
   suspend <- local (const is) $ evalPageItem i
   if suspend then return () else evalPageItems is
            
-evalPageItem :: (Functor m, MonadIO m) => PageItem -> EvaluatorT r m Bool
+evalPageItem :: (Functor m, MonadIO m) => PageItem -> EvaluatorT (CyoaT m) Bool
 evalPageItem (Paragraph is) = do
   mapM_ evalPageItem is
-  tell [OutBreak]
+  emit [OutBreak]
   return False
-evalPageItem (TextLit s) = tell [outText s] >> return False
+evalPageItem (TextLit s) = emit [outText s] >> return False
 evalPageItem (If c thn els) = do
   b <- evalCond c
   mapM_ evalPageItem (if b then thn else els)
   return False
 evalPageItem (Goto capitalize pageNum) = do
-  tell [OutLink (PageLink pageNum) $ unwords [if capitalize then "Lapozz" else "lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
+  emit [OutLink (PageLink pageNum) $ unwords [if capitalize then "Lapozz" else "lapozz", if the then "a" else "az", show pageNum ++ ".", "oldalra"]]
   return False
   where the | pageNum `elem` [1, 5]  = False
             | pageNum `elem` [2, 3, 4, 6, 7, 8, 9] = True
@@ -205,7 +211,7 @@ evalPageItem (GotoLucky refYes refNo) = do
   let page' | d1 + d2 <= luck = refYes
             | otherwise = refNo
   lift $ modifyStat pred Luck
-  tell [outText "Tedd próbára SZERENCSÉDET!", OutDie d1, OutDie d2]
+  emit [outText "Tedd próbára SZERENCSÉDET!", OutDie d1, OutDie d2]
   evalPageItem (Goto True page')
 evalPageItem (Damage stat expr) = do
   value <- evalExpr expr
@@ -218,18 +224,16 @@ evalPageItem (Heal stat expr) = do
 evalPageItem (Set flag) = lift $ setFlag flag >> return False
 evalPageItem (DieDef name) = do
   n <- roll
-  tell [OutDie n]
+  emit [OutDie n]
   modify (Map.insert name n)
   return False
 evalPageItem (Fight enemies) = do
   is <- ask
   dice <- get
-  tell [OutLink (StartFightLink enemies is dice) "Harcolj!"]
+  emit [OutLink (StartFightLink enemies is dice) "Harcolj!"]
   return True
--- evalPageItem (Fight enemies) = do
---   tell [OutFight enemies $ fight `flip` enemies]
                                
-goto :: (MonadIO m) => Link -> CyoaT r m ()
+goto :: (MonadIO m) => Link -> CyoaT m ()
 goto (PageLink pageNum) =
   modifyPlayerState $ \ps -> ps{ player_page = pageNum }  
 goto (StartFightLink enemies is dice) =

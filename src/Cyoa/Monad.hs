@@ -7,7 +7,7 @@ import Prelude hiding (take, drop)
 
 import Control.Monad.Writer  
 import Control.Monad.RWS  
-import Control.Monad.Cont
+import Control.Monad.Error
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Map (Map)
@@ -17,6 +17,29 @@ import Data.Maybe
 import Control.Applicative
 import System.Random
   
+data Link = PageLink PageNum
+          | StartFightLink [Enemy] [PageItem] (Map Die Int)
+          | ContinueFightLink (Maybe FightRound)
+                        
+data Output = OutputClear String [OutputItem]
+            | OutputContinue [OutputItem]
+
+instance Monoid Output where
+  mempty = OutputContinue []
+  (OutputContinue []) `mappend` output@(OutputClear _ _) = output
+  (OutputClear title is) `mappend` (OutputContinue is') = OutputClear title (is `mappend` is')
+  (OutputContinue is) `mappend` (OutputContinue is') = OutputContinue (is `mappend` is')
+  
+data OutputAttr = Good
+                | Bad
+                deriving Show
+data OutputItem = OutText (Maybe OutputAttr) String
+                | OutDie Int
+                | OutLink Link String
+                | OutBreak
+
+outText = OutText Nothing                  
+                  
 data FightState = FS { fight_enemies :: [Enemy]
                      , fight_last_round :: Maybe FightRound
                      , fight_cont :: ([PageItem], Map Die Int) }
@@ -34,11 +57,11 @@ data GameState = GS { player_state :: PlayerState
                     , fight_state :: Maybe FightState
                     }
                deriving (Show)
-                          
-newtype CyoaT r m a = CyoaT { unCyoaT :: RWST (CyoaT r m (), Array PageNum Page) () GameState (ContT r m) a }
+                                                
+newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT String (RWST (Array PageNum Page) Output GameState m) a }
   deriving (Monad, Functor, MonadIO,
-            MonadCont,
-            MonadState GameState, MonadReader (CyoaT r m (), Array PageNum Page),
+            MonadError String,
+            MonadState GameState, MonadReader (Array PageNum Page), MonadWriter Output,
             Applicative)
 
 -- RWS(T) muveletei:
@@ -55,55 +78,55 @@ newtype CyoaT r m a = CyoaT { unCyoaT :: RWST (CyoaT r m (), Array PageNum Page)
 --   put :: (Monad m) => PlayerState -> CyoaT m ()
 --   modify :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
 
-modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT r m ()
+modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
 modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
 
-modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT r m ()
+modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT m ()
 modifyFightState f = modify $ \gs -> gs{ fight_state = f' (fight_state gs) }
   where f' = Just . f. fromJust
      
-carries :: (Monad m) => Item -> CyoaT r m Bool
+carries :: (Monad m) => Item -> CyoaT m Bool
 carries item =
   gets $ Set.member item . player_carries . player_state
 
-takeItem :: (Monad m) => Item -> CyoaT r m ()
+takeItem :: (Monad m) => Item -> CyoaT m ()
 takeItem item =
   modifyPlayerState $ \ps -> ps { player_carries = Set.insert item (player_carries ps) }
         
-dropItem :: (Monad m) => Item -> CyoaT r m ()
+dropItem :: (Monad m) => Item -> CyoaT m ()
 dropItem item =
   modifyPlayerState $ \ps -> ps { player_carries = Set.delete item (player_carries ps) }
 
-flagSet :: (Monad m) => Flag -> CyoaT r m Bool
+flagSet :: (Monad m) => Flag -> CyoaT m Bool
 flagSet flag = gets $ Set.member flag . player_flags . player_state
 
-setFlag :: (Monad m) => Flag -> CyoaT r m ()
+setFlag :: (Monad m) => Flag -> CyoaT m ()
 setFlag flag =        
   modifyPlayerState $ \ps -> ps { player_flags = Set.insert flag (player_flags ps) }
 
-resetFlag :: (Monad m) => Flag -> CyoaT r m ()
+resetFlag :: (Monad m) => Flag -> CyoaT m ()
 resetFlag flag =        
   modifyPlayerState $ \ps -> ps { player_flags = Set.delete flag (player_flags ps) }
            
-getCounter :: (Monad m) => Counter -> CyoaT r m Int
+getCounter :: (Monad m) => Counter -> CyoaT m Int
 getCounter counter = do
   lookup <- gets $ Map.lookup counter . player_counters . player_state
   return $ 0 `fromMaybe` lookup
               
-modifyCounter :: (Monad m) => (Int -> Int) -> Counter -> CyoaT r m ()
+modifyCounter :: (Monad m) => (Int -> Int) -> Counter -> CyoaT m ()
 modifyCounter f counter = do
   modifyPlayerState $ \ps -> ps { player_counters = Map.alter f' counter (player_counters ps) }
   where f' mx = Just $ f $ 0 `fromMaybe` mx
         
-getStat :: (Monad m) => Stat -> CyoaT r m Int
+getStat :: (Monad m) => Stat -> CyoaT m Int
 getStat a = gets $ fst . fromJust . Map.lookup a . player_stats . player_state
 
-die :: (Monad m) => CyoaT r m ()
+die :: (Monad m) => CyoaT m ()
 die = do
-  deathHandler <- asks fst
-  deathHandler
+  tell $ OutputContinue [outText "Kalandod itt véget ér."]
+  throwError "dead"
             
-modifyStat :: (Monad m) => (Int -> Int) -> Stat -> CyoaT r m ()
+modifyStat :: (Monad m) => (Int -> Int) -> Stat -> CyoaT m ()
 modifyStat f stat = do
   modifyPlayerState $ \ps -> ps { player_stats = Map.alter (Just . f' . fromJust) stat (player_stats ps) }
   when (stat == Health) $ do
@@ -126,9 +149,8 @@ data FightRound = FightRound Attacker Bool
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
-stepCyoa :: CyoaT (a, GameState) IO a -> [Page] -> GameState -> IO (a, GameState)
-stepCyoa f pages gs = do
-  runContT (runRWST (unCyoaT f) (return (), pageArray) gs) $ \(result, gs', _) -> return (result, gs')
+stepCyoa :: CyoaT IO a -> [Page] -> GameState -> IO (Either String a, GameState, Output)
+stepCyoa f pages gs = runRWST (runErrorT $ unCyoaT f) pageArray gs
   where pageArray = listArray (1, 400) pages
   
 mkGameState :: IO GameState
@@ -151,4 +173,4 @@ mkPlayer = do
               player_stats = Map.fromList [ (Luck, (luck, luck))
                                           , (Agility, (agility, agility))
                                           , (Health, (health, health))],
-              player_page = 1 } -- harc teszt: 73
+              player_page = 2 } -- harc teszt: 73
