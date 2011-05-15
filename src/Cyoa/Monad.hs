@@ -18,7 +18,7 @@ import Control.Applicative
 import System.Random
   
 data Link = PageLink PageNum
-          | StartFightLink [Enemy] [PageItem] (Map Die Int)
+          | StartFightLink [Enemy] [PageItem]
           | ContinueFightLink (Maybe FightRound)
                         
 data Output = OutputClear String [OutputItem]
@@ -42,7 +42,7 @@ outText = OutText Nothing
                   
 data FightState = FS { fight_enemies :: [Enemy]
                      , fight_last_round :: Maybe FightRound
-                     , fight_cont :: ([PageItem], Map Die Int) }
+                     , fight_cont :: [PageItem] }
                 deriving (Show)
   
 data PlayerState = PS { player_carries :: Set Item
@@ -55,13 +55,14 @@ data PlayerState = PS { player_carries :: Set Item
 
 data GameState = GS { player_state :: PlayerState
                     , fight_state :: Maybe FightState
+                    , page_state :: Map Die Int
                     }
                deriving (Show)
                                                 
-newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT String (RWST (Array PageNum Page) Output GameState m) a }
+newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT String (RWST (Array PageNum Page, [PageItem]) Output GameState m) a }
   deriving (Monad, Functor, MonadIO,
             MonadError String,
-            MonadState GameState, MonadReader (Array PageNum Page), MonadWriter Output,
+            MonadState GameState, MonadReader (Array PageNum Page, [PageItem]), MonadWriter Output,
             Applicative)
 
 -- RWS(T) muveletei:
@@ -121,6 +122,15 @@ modifyCounter f counter = do
 getStat :: (Monad m) => Stat -> CyoaT m Int
 getStat a = gets $ fst . fromJust . Map.lookup a . player_stats . player_state
 
+getDice :: (Monad m) => Die -> CyoaT m Int
+getDice d = gets (fromJust . Map.lookup d . page_state)
+
+addDice :: (Monad m) => Die -> Int -> CyoaT m ()
+addDice d value = modify $ \gs -> gs{ page_state = Map.insert d value (page_state gs) }
+
+clearDice :: (Monad m) => CyoaT m ()
+clearDice = modify $ \gs -> gs{ page_state = Map.empty }
+                 
 die :: (Monad m) => CyoaT m ()
 die = do
   tell $ OutputContinue [outText "Kalandod itt véget ér."]
@@ -150,21 +160,22 @@ roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
 stepCyoa :: (Monad m) => CyoaT m a -> [Page] -> GameState -> m (Either String a, GameState, Output)
-stepCyoa f pages gs = runRWST (runErrorT $ unCyoaT f) pageArray gs
+stepCyoa f pages gs = runRWST (runErrorT $ unCyoaT f) (pageArray, []) gs
   where pageArray = listArray (1, 400) pages
   
 mkGameState :: IO GameState
 mkGameState = do
   ps <- mkPlayer
   return $ GS { player_state = ps,
-                fight_state = Nothing }
+                fight_state = Nothing,
+                page_state = Map.empty}
          
 mkPlayer :: IO PlayerState
 mkPlayer = do
   -- agility <- (6+) <$> roll
   -- health <- (12+) <$> ((+) <$> roll <*> roll)
-  agility <- return 1
-  health <- return 1
+  agility <- return 1000
+  health <- return 1000
   luck <- (6+) <$> roll            
   return PS { player_carries = Set.empty,
               player_flags = Set.empty,
