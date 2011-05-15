@@ -149,7 +149,7 @@ data FightRound = FightRound Attacker Bool
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
-stepCyoa :: CyoaT IO a -> [Page] -> GameState -> IO (Either String a, GameState, Output)
+stepCyoa :: (Monad m) => CyoaT m a -> [Page] -> GameState -> m (Either String a, GameState, Output)
 stepCyoa f pages gs = runRWST (runErrorT $ unCyoaT f) pageArray gs
   where pageArray = listArray (1, 400) pages
   
@@ -173,4 +173,4 @@ mkPlayer = do
               player_stats = Map.fromList [ (Luck, (luck, luck))
                                           , (Agility, (agility, agility))
                                           , (Health, (health, health))],
-              player_page = 2 } -- harc teszt: 73
+              player_page = 73 } -- harc teszt: 73

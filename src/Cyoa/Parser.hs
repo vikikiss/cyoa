@@ -54,6 +54,9 @@ parseCond :: UNode String -> Cond
 parseCond node@(Element "or" _ _) =
   let [left, right] = filter isElement $ getChildren node
   in parseCond left :||: parseCond right
+parseCond node@(Element "and" _ _) =
+  let [left, right] = filter isElement $ getChildren node
+  in parseCond left :&&: parseCond right
 parseCond node@(Element "eq" _ _) = parseBin node (:==:)
 parseCond node@(Element "le" _ _) = parseBin node (:<=:)
 parseCond node@(Element "ge" _ _) = parseBin node (:>=:)

@@ -10,10 +10,14 @@ import qualified Data.Map as Map
 import Data.Array
 import Data.Maybe
 import Control.Applicative
-
+import Control.Monad.Error
+  
 newtype EvaluatorT m a = EvaluatorT { unEvaluatorT :: RWST [PageItem] () (Map Die Int) m a }
   deriving (Monad, MonadReader [PageItem], MonadState (Map Die Int), MonadIO, Applicative, Functor, MonadTrans)           
 
+-- instance (MonadError e m) => MonadError e (EvaluatorT m) where
+--   throwError e = 
+           
 instance (MonadWriter w m) => MonadWriter w (EvaluatorT m) where
   tell = lift . tell
   listen f = do
@@ -72,7 +76,7 @@ evalPage = do
       execRWST (unEvaluatorT $ evalPageItems is) is Map.empty
       return ()
     Just fs -> do
-      fight      
+      fight fs
 
 applyLastRound :: (Functor m, MonadIO m) => CyoaT m ()
 applyLastRound = do
@@ -150,11 +154,10 @@ calculateAttack enemy = do
                , OutLink (ContinueFightLink (Just (FightRound attacker True))) "Igen."
                ]
                      
-fight :: (Functor m, MonadIO m) => CyoaT m ()
-fight = do
+fight :: (Functor m, MonadIO m) => FightState -> CyoaT m ()
+fight fs = do
   applyLastRound
 
-  fs <- gets $ fromJust . fight_state
   let enemies = fight_enemies fs
   case enemies of
     [] -> do
@@ -199,7 +202,7 @@ evalPageItem (Goto capitalize pageNum) = do
             | pageNum < 50 = True
             | pageNum < 60 = False
             | otherwise = True                                                     
-evalPageItem (Inc counter) = lift $ modifyCounter succ counter >> return False                             
+evalPageItem (Inc counter) = lift $ modifyCounter succ counter >> return False        
 evalPageItem (Dec counter) = lift $ modifyCounter pred counter >> return False
 evalPageItem (Clear counter) = lift $ modifyCounter (const 0) counter >> return False
 evalPageItem (Take item) = lift $ takeItem item >> return False
@@ -231,6 +234,7 @@ evalPageItem (Fight enemies) = do
   is <- ask
   dice <- get
   emit [OutLink (StartFightLink enemies is dice) "Harcolj!"]
+  -- throwError "fight"
   return True
                                
 goto :: (MonadIO m) => Link -> CyoaT m ()
