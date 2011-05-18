@@ -18,8 +18,9 @@ import Control.Applicative
 import System.Random
   
 data Link = PageLink PageNum
-          | StartFightLink [Enemy] [PageItem]
+          | StartFightLink
           | ContinueFightLink (Maybe FightRound)
+          deriving (Show, Read, Eq)
                         
 data Output = OutputClear String [OutputItem]
             | OutputContinue [OutputItem]
@@ -161,10 +162,10 @@ modifyStat f stat = do
                       
 data Attacker = AttackerPlayer
               | AttackerEnemy
-              deriving (Show, Read)
+              deriving (Show, Read, Eq)
 
 data FightRound = FightRound Attacker Bool
-                deriving (Show, Read)
+                deriving (Show, Read, Eq)
 
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
@@ -184,8 +185,8 @@ mkPlayer :: IO PlayerState
 mkPlayer = do
   -- agility <- (6+) <$> roll
   -- health <- (12+) <$> ((+) <$> roll <*> roll)
-  agility <- return 1
-  health <- return 1
+  agility <- return 1000
+  health <- return 1000
   luck <- (6+) <$> roll            
   return PS { player_carries = Set.empty,
               player_flags = Set.empty,

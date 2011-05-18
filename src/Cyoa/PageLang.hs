@@ -65,4 +65,4 @@ data PageItem = Paragraph [PageItem]
 data Enemy = Enemy { enemy_name :: String,
                      enemy_agility :: Int,
                      enemy_health :: Int }
-             deriving (Show, Read)
+             deriving (Show, Read, Eq)

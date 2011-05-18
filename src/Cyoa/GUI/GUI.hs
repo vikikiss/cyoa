@@ -187,6 +187,9 @@ render (OutputClear title outItems) = do
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
 
+  (Right state, _) <- stepEngine (gets id)
+  liftIO $ print state
+       
   stat_labels <- asks gui_stat_labels       
   forM_ (Map.toList stat_labels) $ \(stat, label) -> do
     (Right value, _) <- stepEngine (getStat stat)

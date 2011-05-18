@@ -4,8 +4,10 @@ module Cyoa.Web.Web where
 import Cyoa.Monad  
 import Cyoa.Parser
 import Cyoa.PageLang
+import Cyoa.Engine
   
 import Yesod
+import Web.Routes.Quasi.Classes
 import Control.Applicative ((<$>), (<*>))
 import Data.Maybe
 import Data.Text
@@ -18,6 +20,7 @@ import System.IO.Unsafe
 import Control.Monad.RWS
   
 import qualified Text.Blaze.Html4.Strict as HTML  
+import Text.Hamlet
   
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -27,15 +30,40 @@ data CyoaWeb = CyoaWeb
 type Handler = GHandler CyoaWeb CyoaWeb
 
 mkYesod "CyoaWeb" [$parseRoutes|                     
-/ Root GET
-/start Start GET
+/ PRoot GET
+/start PStart GET
+/goto/#Link PGoto GET       
 |]  
 
+instance Yesod CyoaWeb where
+    approot _ = ""
+    -- clientSessionDuration _ = 60                
+
+instance SinglePiece Link where
+  toSinglePiece = pack . show
+  fromSinglePiece s = case reads $ unpack s of
+                        ((link, _):_) -> Just link
+                        [] -> Nothing
+  
+
+htmlFromOutput :: Output -> Hamlet (Route CyoaWeb)
+htmlFromOutput (OutputClear title items) = do
+  HTML.h1 $ HTML.text $ pack title
+  mapM_ htmlFromItem items
+htmlFromOutput (OutputContinue items) = mapM_ htmlFromItem items
+
+htmlFromItem :: OutputItem -> Hamlet (Route CyoaWeb)
+htmlFromItem (OutText _ s) = HTML.text $ pack s -- TODO: OutText attributes
+htmlFromItem (OutBreak) = HTML.br
+htmlFromItem (OutDie n) = HTML.text $ pack ("[" ++ show n ++ "]")
+htmlFromItem (OutLink link s) = HTML.text $ pack s
+htmlFromItem (OutEnemies e) = return ()                                              
+                
 getState :: Handler GameState
 getState = do
   state <- lookupSession "state"
   case state of
-    Nothing -> redirect RedirectTemporary Start
+    Nothing -> redirect RedirectTemporary PStart
     Just state -> return $ unserialize state
 
 setState :: GameState -> Handler ()
@@ -53,48 +81,27 @@ stepEngine f = do
   return (x, w)
   
            
-getRoot :: Handler RepHtml
-getRoot = do
-  (Right pagenum, _) <- stepEngine (gets $ player_page . player_state)
-  defaultLayout [$hamlet|<h1>#{pagenum}|]
-  -- state <- getState
-  -- case (page state) of
-  --   1 -> do
-  --     defaultLayout $ do
-  --       when ("kard" `Set.member` (items state)) $
-  --         addHtml $ HTML.p $ HTML.toHtml ("Van egy fasza kardod" :: String)
-  --       addHamlet [$hamlet|
-  --         <h1>#{page state}              
-  --         <p><a href=@{Goto 2}>Menj a masodik oldalra
-  --         |]
-  --   2 -> do
-  --     setState state{ items = Set.insert "kard" $ items state }
-  --     defaultLayout [$hamlet|
-  --                    <h1>#{page state}              
-  --                    <p><a href=@{Goto 1}>Menj az elso oldalra
-  --                    |]           
+getPRoot :: Handler RepHtml
+getPRoot = do
+  (result, output) <- stepEngine evalPage
+  defaultLayout $ addHtml $ htmlFromOutput output
            
-getStart :: Handler ()
-getStart = do
+getPStart :: Handler ()
+getPStart = do
   state <- liftIO $ mkGameState
   setState state
-  redirect RedirectTemporary Root
+  redirect RedirectTemporary PRoot
 
--- getGoto :: Int -> Handler ()  
--- getGoto n = do
---   state <- getState
---   setState $ state{ page = n }
---   redirect RedirectTemporary Root
+getPGoto :: Link -> Handler ()  
+getPGoto link = do
+  stepEngine (goto link)
+  redirect RedirectTemporary PRoot
 
 serialize :: GameState -> Text
 serialize = pack . show           
            
 unserialize = read . unpack
                
-instance Yesod CyoaWeb where
-    approot _ = ""
-    -- clientSessionDuration _ = 60
-                
 main = do
   args <- getArgs
   pages <- case args of

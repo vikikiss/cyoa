@@ -204,17 +204,17 @@ evalPageItem (DieDef name) = do
   addDice name n
 evalPageItem (Fight enemies) = do
   is <- asks snd
-  emit [OutLink (StartFightLink enemies is) "Harcolj!"]
+  let fs = FS { fight_enemies = enemies,
+                fight_last_round = Nothing,
+                fight_cont = is }
+  modify $ \gs -> gs{ fight_state = Just fs }
+  emit [OutLink StartFightLink "Harcolj!"]
   throwError FightEvent
                                
 goto :: (MonadIO m) => Link -> CyoaT m ()
 goto (PageLink pageNum) =
   modifyPlayerState $ \ps -> ps{ player_page = pageNum }  
-goto (StartFightLink enemies is) =
-  modify $ \gs -> gs{ fight_state = Just fs }
-    where fs = FS { fight_enemies = enemies,
-                    fight_last_round = Nothing,
-                    fight_cont = is }
+goto StartFightLink = return ()
 goto (ContinueFightLink round) = 
   modifyFightState (\fs -> fs{ fight_last_round = round })
 
