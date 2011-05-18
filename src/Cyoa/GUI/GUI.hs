@@ -1,5 +1,8 @@
 module Main where
 
+import Data.Map (Map)
+import qualified Data.Map as Map
+  
 import Graphics.UI.Gtk hiding (eventClick)
 import Graphics.UI.Gtk.Gdk.Events
 import Control.Monad.Trans
@@ -21,7 +24,7 @@ import System.IO.Unsafe
 
 data GUICtxt = GUICtxt { gui_buf :: TextBuffer
                        , gui_view :: TextView
-                       , gui_label_health :: Label
+                       , gui_stat_labels :: Map Stat Label
                        }
 
 type GUI a = ReaderT GUICtxt IO a             
@@ -144,13 +147,19 @@ main = do
   containerAdd scrollwin tview                          
 
   statusbar <- statusbarNew
-  label_health <- do
-    hbox <- hBoxNew False 0
-    containerAdd hbox =<< imageNewFromFile "heart_icon.png"
-    label <- labelNew Nothing
-    containerAdd hbox label
-    boxPackStart statusbar hbox PackNatural 0
-    return label
+  let statusLabel icon = do
+         hbox <- hBoxNew False 0
+         containerAdd hbox =<< imageNewFromFile icon -- TODO: more robust finding of icons                        
+         label <- labelNew Nothing
+         containerAdd hbox label
+         boxPackStart statusbar hbox PackNatural 0
+         return label         
+         
+  labelHealth <- statusLabel "heart_icon.png"
+  labelAgility <- statusLabel "sword_icon.png"
+  labelLuck <- statusLabel "luck_icon.png"
+
+  let stat_labels = Map.fromList [(Health, labelHealth), (Agility, labelAgility), (Luck, labelLuck)]
                
   vbox <- vBoxNew False 0
   containerAdd vbox scrollwin
@@ -165,7 +174,7 @@ main = do
   (_, s, output) <- stepCyoa `flip` pages `flip` s0 $ do
                       evalPage
   writeIORef refState s
-  runReaderT `flip` (GUICtxt buf tview label_health) $ do         
+  runReaderT `flip` (GUICtxt buf tview stat_labels) $ do
     render output
   mainGUI
 
@@ -177,9 +186,11 @@ render (OutputClear title outItems) = do
   render (OutputContinue outItems)  
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
-  health_label <- asks gui_label_health
-  (Right health, _) <- stepEngine (getStat Health)
-  lift $ labelSetText health_label (show health)
+
+  stat_labels <- asks gui_stat_labels       
+  forM_ (Map.toList stat_labels) $ \(stat, label) -> do
+    (Right value, _) <- stepEngine (getStat stat)
+    lift $ labelSetText label (show value)                        
             
   display outItems
     where
