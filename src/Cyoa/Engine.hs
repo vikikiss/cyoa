@@ -47,9 +47,13 @@ evalPage = do
   case fightState of
     Nothing -> do
       pageNum <- gets $ player_page . player_state
-      (Page _ is) <- asks $ (!pageNum) . fst
+      (Page _ pageType is) <- asks $ (!pageNum) . fst
       tell $ OutputClear (show pageNum ++ ".") []
       evalPageItems is
+      case pageType of
+        WinPage -> throwError WinEvent
+        DeathPage -> throwError DeathEvent
+        NormalPage -> return ()
     Just fs -> do
       fight
 
@@ -143,9 +147,7 @@ fight = do
       evalPageItems is
       
     (enemy:_) -> do
-      -- Debug kimenet
-      forM_ enemies $ \e -> do
-        emit [outText (show e), OutBreak]
+      emit [OutEnemies enemies]                 
       calculateAttack enemy
            
 rollAttack agility = do    
@@ -203,7 +205,7 @@ evalPageItem (DieDef name) = do
 evalPageItem (Fight enemies) = do
   is <- asks snd
   emit [OutLink (StartFightLink enemies is) "Harcolj!"]
-  throwError "fight"
+  throwError FightEvent
                                
 goto :: (MonadIO m) => Link -> CyoaT m ()
 goto (PageLink pageNum) =

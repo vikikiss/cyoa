@@ -36,7 +36,12 @@ data Cond = CLiteral Bool
           | FlagSet Flag
           deriving Show
 
-data Page = Page PageNum [PageItem]
+data PageType = NormalPage
+              | WinPage
+              | DeathPage
+              deriving Show
+                   
+data Page = Page PageNum PageType [PageItem]
           deriving Show
                    
 data PageItem = Paragraph [PageItem]

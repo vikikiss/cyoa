@@ -60,7 +60,7 @@ refPages = unsafePerformIO $ newIORef (error "refPages")
 refLinkCount :: IORef Int
 refLinkCount = unsafePerformIO $ newIORef (error "refLinkCount")
 
-stepEngine :: CyoaT IO a -> GUI (Either String a, Output)
+stepEngine :: CyoaT IO a -> GUI (Either GameEvent a, Output)
 stepEngine f = do
   s <- lift $ readIORef refState
   pages <- lift $ readIORef refPages
@@ -84,8 +84,12 @@ insertLinkToBuf text link = do
         Button{} -> when (eventClick e == ReleaseClick) $ do
                       linkCount' <- readIORef refLinkCount
                       when (linkCount == linkCount') $ runReaderT `flip` ctx $ do
-                        (_, output) <- stepEngine (goto link >> evalPage)
+                        (result, output) <- stepEngine (goto link >> evalPage)                                            
                         render output
+                        case result of
+                          Left DeathEvent -> liftIO $ putStrLn "Meghaltal"
+                          Left WinEvent -> liftIO $ putStrLn "Nyertel"
+                          _ -> return ()
         Motion{} -> return () -- TODO: set mouse cursor on a DrawWindow
         _ -> return ()
     -- TODO: report bug: EAny-bol hogy lehet barmit kiolvasni?
@@ -180,6 +184,10 @@ render (OutputContinue outItems) = do
   display outItems
     where
       display (OutBreak:os) = insertTextToBuf "\n" >> display os
+      display ((OutEnemies enemies):os) = do
+        forM_ enemies $ \enemy -> do
+          display [OutText Nothing (show enemy), OutBreak]
+        display os
       display ((OutText a s):os) = do        
         buf <- asks gui_buf
         (start, end) <- insertTextToBuf s

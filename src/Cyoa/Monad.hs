@@ -36,6 +36,7 @@ data OutputAttr = Good
 data OutputItem = OutText (Maybe OutputAttr) String
                 | OutDie Int
                 | OutLink Link String
+                | OutEnemies [Enemy]
                 | OutBreak
 
 outText = OutText Nothing                  
@@ -58,10 +59,18 @@ data GameState = GS { player_state :: PlayerState
                     , page_state :: Map Die Int
                     }
                deriving (Show)
-                                                
-newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT String (RWST (Array PageNum Page, [PageItem]) Output GameState m) a }
+
+data GameEvent = DeathEvent
+               | WinEvent
+               | FightEvent
+               deriving Show
+
+instance Error GameEvent where
+  noMsg = error "noMsg"
+                        
+newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent (RWST (Array PageNum Page, [PageItem]) Output GameState m) a }
   deriving (Monad, Functor, MonadIO,
-            MonadError String,
+            MonadError GameEvent,
             MonadState GameState, MonadReader (Array PageNum Page, [PageItem]), MonadWriter Output,
             Applicative)
 
@@ -133,15 +142,16 @@ clearDice = modify $ \gs -> gs{ page_state = Map.empty }
                  
 die :: (Monad m) => CyoaT m ()
 die = do
-  tell $ OutputContinue [outText "Kalandod itt véget ér."]
-  throwError "dead"
+  throwError DeathEvent
             
 modifyStat :: (Monad m) => (Int -> Int) -> Stat -> CyoaT m ()
 modifyStat f stat = do
   modifyPlayerState $ \ps -> ps { player_stats = Map.alter (Just . f' . fromJust) stat (player_stats ps) }
   when (stat == Health) $ do
     health <- getStat Health
-    when (health == 0) die  
+    when (health == 0) $ do
+      tell $ OutputContinue [outText "Életerőpontjaid elfogytak, kalandod itt véget ér."]
+      die  
                              
   where f' (current, initial) = (new, initial)
           where new = clamp (0, initial) (f current)
@@ -159,7 +169,7 @@ data FightRound = FightRound Attacker Bool
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        
         
-stepCyoa :: (Monad m) => CyoaT m a -> [Page] -> GameState -> m (Either String a, GameState, Output)
+stepCyoa :: (Monad m) => CyoaT m a -> [Page] -> GameState -> m (Either GameEvent a, GameState, Output)
 stepCyoa f pages gs = runRWST (runErrorT $ unCyoaT f) (pageArray, []) gs
   where pageArray = listArray (1, 400) pages
   
@@ -174,8 +184,8 @@ mkPlayer :: IO PlayerState
 mkPlayer = do
   -- agility <- (6+) <$> roll
   -- health <- (12+) <$> ((+) <$> roll <*> roll)
-  agility <- return 1000
-  health <- return 1000
+  agility <- return 1
+  health <- return 1
   luck <- (6+) <$> roll            
   return PS { player_carries = Set.empty,
               player_flags = Set.empty,
@@ -184,4 +194,4 @@ mkPlayer = do
               player_stats = Map.fromList [ (Luck, (luck, luck))
                                           , (Agility, (agility, agility))
                                           , (Health, (health, health))],
-              player_page = 73 } -- harc teszt: 73
+              player_page = 73 } -- harc teszt: 73, death teszt: 323

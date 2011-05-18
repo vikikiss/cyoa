@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, PatternGuards #-}
 module Cyoa.Parser (parsePages) where
 
 import Cyoa.NormalizeXML
@@ -16,7 +16,10 @@ import Control.Monad
 import Data.Char
 
 parsePage :: UNode String -> Page
-parsePage node = Page (getId node) (map parseItem (filter isElement $ getChildren node))
+parsePage node = Page (getId node) pageType (map parseItem (filter isElement $ getChildren node))
+  where pageType | Just "1" <- getAttribute node "death" = DeathPage
+                 | Just "1" <- getAttribute node "win" = WinPage
+                 | otherwise = NormalPage
 
 parseItem :: UNode String -> PageItem
 parseItem (Text t) = TextLit t                        
