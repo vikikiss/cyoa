@@ -44,7 +44,7 @@ outText = OutText Nothing
 data FightState = FS { fight_enemies :: [Enemy]
                      , fight_last_round :: Maybe FightRound
                      , fight_cont :: [PageItem] }
-                deriving (Show)
+                deriving (Show, Read)
   
 data PlayerState = PS { player_carries :: Set Item
                       , player_flags :: Set Flag
@@ -52,13 +52,13 @@ data PlayerState = PS { player_carries :: Set Item
                       , player_stats :: Map Stat (Int, Int) -- (current, initial)
                       , player_page :: PageNum
                       }
-                 deriving (Show)
+                 deriving (Show, Read)
 
 data GameState = GS { player_state :: PlayerState
                     , fight_state :: Maybe FightState
                     , page_state :: Map Die Int
                     }
-               deriving (Show)
+               deriving (Show, Read)
 
 data GameEvent = DeathEvent
                | WinEvent
@@ -161,10 +161,10 @@ modifyStat f stat = do
                       
 data Attacker = AttackerPlayer
               | AttackerEnemy
-              deriving Show
+              deriving (Show, Read)
 
 data FightRound = FightRound Attacker Bool
-                deriving Show
+                deriving (Show, Read)
 
 roll :: (MonadIO m) => m Int
 roll = liftIO $ randomRIO (1, 6)        

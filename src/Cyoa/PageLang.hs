@@ -21,7 +21,7 @@ data Expr = ELiteral Int
           | ECond Cond Expr Expr -- ?:
           | CounterRef Counter
           | StatQuery Stat
-          deriving Show
+          deriving (Show, Read)
 
 data Cond = CLiteral Bool
           | Cond :||: Cond
@@ -34,12 +34,12 @@ data Cond = CLiteral Bool
           | Expr :==: Expr
           | Carry Item
           | FlagSet Flag
-          deriving Show
+          deriving (Show, Read)
 
 data PageType = NormalPage
               | WinPage
               | DeathPage
-              deriving Show
+              deriving (Show, Read)
                    
 data Page = Page PageNum PageType [PageItem]
           deriving Show
@@ -60,9 +60,9 @@ data PageItem = Paragraph [PageItem]
               | Set Flag
               | Reset Flag
               | Fight [Enemy]
-              deriving Show
+              deriving (Show, Read)
 
 data Enemy = Enemy { enemy_name :: String,
                      enemy_agility :: Int,
                      enemy_health :: Int }
-             deriving Show
+             deriving (Show, Read)

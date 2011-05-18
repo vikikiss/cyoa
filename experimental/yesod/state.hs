@@ -62,7 +62,7 @@ getStart = do
 getGoto :: Int -> Handler ()  
 getGoto n = do
   state <- getState
-  setSession "state" $ serialize $ state{ page = n }
+  setState $ state{ page = n }
   redirect RedirectTemporary Root
 
 serialize :: GameState -> Text
