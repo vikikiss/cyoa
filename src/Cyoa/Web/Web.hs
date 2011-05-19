@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies, QuasiQuotes, TemplateHaskell, MultiParamTypeClasses, OverloadedStrings #-}
-module Cyoa.Web.Web where
+-- module Cyoa.Web.Web where
 
 import Cyoa.Monad  
 import Cyoa.Parser
@@ -46,18 +46,24 @@ instance SinglePiece Link where
                         [] -> Nothing
   
 
-htmlFromOutput :: Output -> Hamlet (Route CyoaWeb)
-htmlFromOutput (OutputClear title items) = do
-  HTML.h1 $ HTML.text $ pack title
-  mapM_ htmlFromItem items
-htmlFromOutput (OutputContinue items) = mapM_ htmlFromItem items
+toHamlet :: Output -> Hamlet (Route CyoaWeb)
+toHamlet (OutputClear title items) = [$hamlet|
+                                      <h1>#{title}
+                                      $forall item <- items
+                                        ^{itemToHamlet item}               
+                                     |]
+toHamlet (OutputContinue items) = [$hamlet|
+                                   $forall item <- items
+                                     ^{itemToHamlet item}               
+                                  |]
 
-htmlFromItem :: OutputItem -> Hamlet (Route CyoaWeb)
-htmlFromItem (OutText _ s) = HTML.text $ pack s -- TODO: OutText attributes
-htmlFromItem (OutBreak) = HTML.br
-htmlFromItem (OutDie n) = HTML.text $ pack ("[" ++ show n ++ "]")
-htmlFromItem (OutLink link s) = HTML.text $ pack s
-htmlFromItem (OutEnemies e) = return ()                                              
+itemToHamlet :: OutputItem -> Hamlet (Route CyoaWeb)
+itemToHamlet (OutText _ s) = [$hamlet|#{s}|]
+itemToHamlet (OutBreak) = [$hamlet|<br>|]
+itemToHamlet (OutDie n) = [$hamlet|[#{n}]|] -- TODO
+itemToHamlet (OutLink link s) = [$hamlet|<a href="@{PGoto link}">#{s}|]
+itemToHamlet (OutEnemies e) = [$hamlet| |]
+                              
                 
 getState :: Handler GameState
 getState = do
@@ -84,7 +90,7 @@ stepEngine f = do
 getPRoot :: Handler RepHtml
 getPRoot = do
   (result, output) <- stepEngine evalPage
-  defaultLayout $ addHtml $ htmlFromOutput output
+  defaultLayout $ addHamlet $ toHamlet output
            
 getPStart :: Handler ()
 getPStart = do
