@@ -195,4 +195,4 @@ mkPlayer = do
               player_stats = Map.fromList [ (Luck, (luck, luck))
                                           , (Agility, (agility, agility))
                                           , (Health, (health, health))],
-              player_page = 1 } -- harc teszt: 73, death teszt: 323
+              player_page = 73 } -- harc teszt: 73, death teszt: 323
