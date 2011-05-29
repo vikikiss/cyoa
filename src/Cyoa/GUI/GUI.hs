@@ -142,6 +142,11 @@ main = do
   
   widgetSetSizeRequest tview 400 600  
 
+  hbox <- hBoxNew False 0
+  image <- imageNewFromFile "../pictures/twoHeadedDog.jpg"
+  containerAdd hbox image
+  
+                       
   scrollwin <- scrolledWindowNew Nothing Nothing
   scrolledWindowSetPolicy scrollwin PolicyNever PolicyAutomatic
   containerAdd scrollwin tview                          
@@ -164,8 +169,9 @@ main = do
   vbox <- vBoxNew False 0
   containerAdd vbox scrollwin
   containerAdd vbox statusbar
-          
-  containerAdd wnd vbox
+
+  containerAdd hbox vbox
+  containerAdd wnd hbox
   
   widgetShowAll wnd  
                 
