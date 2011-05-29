@@ -1,4 +1,8 @@
 {-# LANGUAGE TypeFamilies, QuasiQuotes, TemplateHaskell, MultiParamTypeClasses, OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 -- module Cyoa.Web.Web where
 
 import Cyoa.Monad  
@@ -6,6 +10,8 @@ import Cyoa.Parser
 import Cyoa.PageLang
 import Cyoa.Engine
   
+import Control.Monad.State
+
 import Yesod
 import Web.Routes.Quasi.Classes
 import Control.Applicative ((<$>), (<*>))
@@ -46,23 +52,33 @@ instance SinglePiece Link where
                         [] -> Nothing
   
 
-toHamlet :: Output -> Hamlet (Route CyoaWeb)
+-- type Ham = State [Int] (Hamlet (Route CyoaWeb))
+type LinkFactory = Route CyoaWeb -> [(Text, Text)] -> Text
+type Ham = LinkFactory -> Html
+
+toHamlet :: Output -> Ham
 toHamlet (OutputClear title items) = [$hamlet|
                                       <h1>#{title}
-                                      $forall item <- items
-                                        ^{itemToHamlet item}               
-                                     |]
-toHamlet (OutputContinue items) = [$hamlet|
-                                   $forall item <- items
-                                     ^{itemToHamlet item}               
-                                  |]
+                                      ^{itemsToHamlet 0 items}
+                                      |]
+toHamlet (OutputContinue items) = itemsToHamlet 0 items
 
-itemToHamlet :: OutputItem -> Hamlet (Route CyoaWeb)
-itemToHamlet (OutText _ s) = [$hamlet|#{s}|]
-itemToHamlet (OutBreak) = [$hamlet|<br>|]
-itemToHamlet (OutDie n) = [$hamlet|[#{n}]|] -- TODO
-itemToHamlet (OutLink link s) = [$hamlet|<a href="@{PGoto link}">#{s}|]
-itemToHamlet (OutEnemies e) = [$hamlet| |]
+itemsToHamlet :: Int -> [OutputItem] -> Ham
+itemsToHamlet x [] = [$hamlet| |]
+itemsToHamlet x ((OutText _ s):is) = [$hamlet|#{s} ^{itemsToHamlet x is}|]
+itemsToHamlet x (OutBreak:is) = [$hamlet|<br> ^{itemsToHamlet x is}|]
+itemsToHamlet x ((OutDie n):is) = [$hamlet|
+                                   ^{roll} 
+                                   <span #hide-#{x} style="visibility:hidden">
+                                     [#{n}]                     
+                                     ^{itemsToHamlet (succ x) is}
+                                  |]
+  where roll = [$hamlet|<a .btn #roll-#{x} onClick="document.getElementById('roll-#{x}').style.display='none'; document.getElementById('hide-#{x}').style.visibility='visible'">Dobj!|]
+itemsToHamlet x ((OutLink link s):is) = [$hamlet|
+                                         <a href="@{PGoto link}">#{s}
+                                         ^{itemsToHamlet x is}
+                                        |]
+itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
                               
                 
 getState :: Handler GameState
@@ -90,7 +106,14 @@ stepEngine f = do
 getPRoot :: Handler RepHtml
 getPRoot = do
   (result, output) <- stepEngine evalPage
-  defaultLayout $ addHamlet $ toHamlet output
+  defaultLayout $ do
+    addCassius $ [$cassius| 
+                  .btn, a
+                    color: blue
+                    text-decoration: underline
+                    cursor: pointer
+                 |]
+    addHamlet $ toHamlet output
            
 getPStart :: Handler ()
 getPStart = do
