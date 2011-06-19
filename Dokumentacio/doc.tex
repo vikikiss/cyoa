@@ -5,14 +5,22 @@
 \usepackage[magyar]{babel}
 \usepackage{amssymb}
 \usepackage{paralist}
+\usepackage{graphicx}
 \begin{document}
 \title{Kaland játék kockázat}
 \author{Kiss Viktória}
 \date{2011.\ június}
-\maketitle
+% \maketitle
+\input{title}
 \tableofcontents
 
-\addcontentsline{toc}{chapter}{Bevezetés}
+\newcommand{\chap}[1]{
+  \addcontentsline{toc}{chapter}{#1}
+  \addtocounter{chapter}{1}
+  \chapter*{#1}
+}
+
+\addcontentsline{toc}{chapter}{Bevezető}
 \chapter*{Bevezetés}
   A nagyprogramom alapjául a '80-'90-es évek \emph{Kaland Játék Kockázat}
   könyvei szolgáltak. Ezekben a könyvekben nem hagyományos történetek
@@ -52,7 +60,7 @@
   fel, mennyi az életerő, szerencse és ügyességi pontjaink, mennyit
   dobtunk a dobokockával, stb.
   
-\chapter{Felhasználói dokumentáció}
+\chap{Felhasználói dokumentáció}
 
     \section{Játékszabályok}
   
@@ -145,5 +153,5 @@
         hová akar érkezni.
     \section{Program indítása, használata}
       TODO
-\chapter{Fejlesztői dokumentáció}
+\chap{Fejlesztői dokumentáció}
 \end{document}
