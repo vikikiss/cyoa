@@ -177,11 +177,11 @@ main = do
 
   (s0, output0) <- runWriterT mkGameState
   -- TODO: stepEngine
-  (_, s, output) <- stepCyoa `flip` pages `flip` s0 $ do
-                      evalPage
-  writeIORef refState s
+  -- (_, s, output) <- stepCyoa `flip` pages `flip` s0 $ do
+  --                     evalPage
+  writeIORef refState s0
   runReaderT `flip` (GUICtxt buf tview stat_labels) $ do
-    render output
+    render output0
   mainGUI
 
 render (OutputClear title outItems) = do

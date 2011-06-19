@@ -12,9 +12,6 @@ import Data.Maybe
 import Control.Applicative
 import Control.Monad.Error
 
-emit :: (Monad m) => [OutputItem] -> CyoaT m ()
-emit = tell . OutputContinue
-
 evalExpr :: (Monad m, Functor m) => Expr -> CyoaT m Int
 evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f

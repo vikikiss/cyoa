@@ -32,6 +32,9 @@ instance Monoid Output where
   (OutputClear title is) `mappend` (OutputContinue is') = OutputClear title (is `mappend` is')
   (OutputContinue is) `mappend` (OutputContinue is') = OutputContinue (is `mappend` is')
 
+emit :: (MonadWriter Output m) => [OutputItem] -> m ()
+emit = tell . OutputContinue
+
 data OutputAttr = Good
                 | Bad
                 deriving Show
@@ -152,7 +155,7 @@ modifyStat f stat = do
   when (stat == Health) $ do
     health <- getStat Health
     when (health == 0) $ do
-      tell $ OutputContinue [outText "Életerőpontjaid elfogytak, kalandod itt véget ér."]
+      emit [outText "Életerőpontjaid elfogytak, kalandod itt véget ér."]
       die
 
   where f' (current, initial) = (new, initial)
@@ -171,7 +174,7 @@ data FightRound = FightRound Attacker Bool
 roll :: (MonadWriter Output m, MonadIO m) => m Int
 roll = do
   d <- liftIO $ randomRIO (1, 6)
-  tell $ OutputContinue [OutDie d]
+  emit [OutDie d]
   return d
 
 stepCyoa :: (Monad m) => CyoaT m a -> [Page] -> GameState -> m (Either GameEvent a, GameState, Output)
@@ -187,11 +190,20 @@ mkGameState = do
 
 mkPlayer :: WriterT Output IO PlayerState
 mkPlayer = do
-  -- agility <- (6+) <$> roll
-  -- health <- (12+) <$> ((+) <$> roll <*> roll)
-  agility <- return 1000
-  health <- return 1000
+  tell $ OutputClear "Új kaland" []
+  emit [outText "Ügyesség pontjaid: 6 + "]
+  agility <- (6+) <$> roll
+  emit [outText $ " = " ++ show agility, OutBreak]
+
+  emit [outText "Életerő pontjaid: 12 + "]
+  health <- (12+) <$> ((+) <$> roll <*> roll)
+  emit [outText $ " = " ++ show health, OutBreak]
+
+  emit [outText "Szerencse pontjaid: 6 + "]
   luck <- (6+) <$> roll
+  emit [outText $ " = " ++ show luck, OutBreak]
+
+  emit [ OutLink (PageLink 1) "És most lapozz az 1. oldalra..." ]
   return PS { player_carries = Set.empty,
               player_flags = Set.empty,
               player_counters = Map.empty,
