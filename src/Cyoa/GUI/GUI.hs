@@ -143,7 +143,7 @@ main = do
   widgetSetSizeRequest tview 400 600
 
   hbox <- hBoxNew False 0
-  image <- imageNewFromFile "../pictures/twoHeadedDog.jpg"
+  image <- imageNewFromFile "../pictures/Hero42.jpg"
   containerAdd hbox image
 
 

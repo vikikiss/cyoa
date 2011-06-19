@@ -1,4 +1,5 @@
 \documentclass[12pt,a4paper,oneside]{report}
+
 \usepackage{txfonts}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -6,11 +7,17 @@
 \usepackage{amssymb}
 \usepackage{paralist}
 \usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{color}
+
+\definecolor{Tag}{named}{NavyBlue}
+\definecolor{Attr}{RGB}{238,0,0}
+\definecolor{Value}{named}{OliveGreen}
+
+\newcommand{\stat}{\textsc}
+\newcommand{\attr}{\emph}
+\newcommand{\proglang}{\texttt}
+
 \begin{document}
-\title{Kaland játék kockázat}
-\author{Kiss Viktória}
-\date{2011.\ június}
-% \maketitle
 \input{title}
 \tableofcontents
 
@@ -22,6 +29,7 @@
 
 \addcontentsline{toc}{chapter}{Bevezető}
 \chapter*{Bevezetés}
+
   A nagyprogramom alapjául a '80-'90-es évek \emph{Kaland Játék Kockázat}
   könyvei szolgáltak. Ezekben a könyvekben nem hagyományos történetek
   szerepelnek, tehát nem az előre megírt kalandot, történetet olvassa el
@@ -38,8 +46,8 @@
   Ám sajnos a kalandot el is lehet bukni. Vannak olyan helyek, ahol
   csapdába eshetünk, vagy egy gonosz lény felül kerekedik rajtunk, és
   nem tudjuk legyőzni. Ahhoz, hogy sikeresen végigjátszuk szükségünk
-  van \textsc{ügyességre}, \textsc{szerencsére} és
-  \textsc{életerőre}. Ez a három dolog, ami jellemez egy hőst.
+  van \stat{ügyességre}, \stat{szerencsére} és \stat{életerőre}. Ez a
+  három dolog, ami jellemez egy hőst.
 
   Mivel a játékos mondja meg, hogy mi legyen a következő lépés, ő
   befolyásolja a további történést, ezért jó ötletnek találtam ezt
@@ -50,46 +58,53 @@
   kalandját, átmegyünk arra az oldalra, ahol további kalandok, veszélyek
   leselkednek rá.
   
-  A játékoz szükség volt egy papírlapra, melyen a játékos vezette, hogy
-  mennyi aktuálisan az életereje, szerencséje, ügyessége. Illetve, ha
-  talált egy tárgyat, amit fel lehet venni, azt is felírta, hogy
-  használni tudja később, amikor szükség van rá. Emellett két dobókocka
-  is kellett, mert a szörnyek elleni harcnál a véletlen dönt, hogy ki
-  sebez kit. A nagyprogramom végigjátszásánál nincs szükség ezekre a
-  kellékekre, mert a program állapota tárolja, hogy milyen eszközöket vettünk
-  fel, mennyi az életerő, szerencse és ügyességi pontjaink, mennyit
-  dobtunk a dobokockával, stb.
+  Az eredeti játék az volt, hogy a könyvet olvasva a játékos
+  kigyűtötte magának az információkat, amelyet kalandja során
+  tapasztalt így, szükség volt egy papírlapra, melyen vezette, hogy
+  mennyi aktuálisan az \stat{életereje}, \stat{szerencséje},
+  \stat{ügyessége}. Illetve, ha talált egy tárgyat, amit fel lehet
+  venni, azt is felírta, hogy használni tudja később, amikor szükség
+  van rá. Emellett két dobókocka is kellett, mert a szörnyek elleni
+  harcnál a véletlen dönt, hogy ki sebez kit. A nagyprogramom
+  végigjátszásánál nincs szükség ezekre a kellékekre, mert a program
+  állapota tárolja, hogy milyen eszközöket vettünk fel, mennyi az
+  \stat{életerő}, \stat{szerencse} és \stat{ügyességi pontjaink},
+  mennyit dobtunk a dobokockával, stb.
   
 \chap{Felhasználói dokumentáció}
 
     \section{Játékszabályok}
   
       \subsection{Ügyesség, életerő, szerencse pontok}
-        Mielőtt elkezdünk egy játékot meg kell határoznunk a fent említett
-        életerő, szerencse és ügyességi pontjainkat. Ahhoz, hogy megkapjuk az
-        ügyességi pontainkat dobjunk a dobókockával, majd a kapott számhoz
-        adjunk hozzá 6-ot. Ugyanígy járjunk el a szerencsepontjaink
-        meghatározásához is. Hogy életerő pontjainkat megtudjuk dobjunk két
-        dobókockával és adjunk hozzá 12-t. Ezek az értékek a kalandok során
-        folyamatosan változni fognak, de nem csökkenhetnek 0 alá, és pont
-        visszaszerzés során nem mehetnek a kezdeti érték fölé. Az ügyességi
-        pontok mutatják, hogy mennyire tudunk jól harcolni, mennyire vagyunk
-        tapasztaltak. Az életerő pont azt jelzi, mennyire vagyunk
-        egészségesek, erősek. A szerencse, pedig természetesen a szerencsénket
-        jelzi.
+        Mielőtt elkezdünk egy játékot meg kell határoznunk a fent
+        említett \stat{életerő}, \stat{szerencse} és \stat{ügyességi
+        pontjainkat}. Ahhoz, hogy megkapjuk az \stat{ügyességi
+        pontainkat} dobjunk a dobókockával, majd a kapott számhoz
+        adjunk hozzá 6-ot. Ugyanígy járjunk el a \stat{szerencse
+        pontjaink} meghatározásához is. Hogy \stat{életerő
+        pontjainkat} megtudjuk dobjunk két dobókockával és adjunk
+        hozzá 12-t. Ezek az értékek a kalandok során folyamatosan
+        változni fognak, de nem csökkenhetnek 0 alá, és pont
+        visszaszerzés során nem mehetnek a kezdeti érték fölé. Az
+        \stat{ügyességi pontok} mutatják, hogy mennyire tudunk jól
+        harcolni, mennyire vagyunk tapasztaltak. Az \stat{életerő
+        pont} azt jelzi, mennyire vagyunk egészségesek, erősek. A
+        \stat{szerencse}, pedig természetesen a szerencsénket jelzi.
     
       \subsection{Csata}
-        Sűrűn találkozhatunk kalandunk során olyan oldallal, ahol meg kell
-        küzdenünk egy különleges teremtménnyel, mesebeli szörnnyel. A szörny is
-        rendelkezik hasonló tulajdonságokkal, mint mi, vagyis neki is van
-        ügyességi és életerő pontja, viszont nincs szerencse pontja.
-        Amikor elérkezünk a csatához, akkor körökre bontva támadunk. Vagy a
-        lény támad minket, vagy mi a lényt. Ennek eldöntésére használjuk a
-        dobókockát, hogy véletlenszerű legyen. Ezeket a köröket addig
-        csináljuk, amíg valakinek az életereje le nem csökken 0-ra. Ha a
-        szörny életereje lemegy 0-ra, akkor mi győztünk, ellenkező esetben
-        vesztettünk és újból kell kezdenünk az egész kalandunkat, nem csak a
-        harcot. Egy kör az alábbi módon néz ki:
+        Sűrűn találkozhatunk kalandunk során olyan oldallal, ahol meg
+        kell küzdenünk egy különleges teremtménnyel, mesebeli
+        szörnnyel. A szörny is rendelkezik hasonló tulajdonságokkal,
+        mint mi, vagyis neki is van \stat{ügyességi} és \stat{életerő
+        pontja}, viszont nincs \stat{szerencse pontja}.  Amikor
+        elérkezünk a csatához, akkor körökre bontva támadunk. Vagy a
+        lény támad minket, vagy mi a lényt. Ennek eldöntésére
+        használjuk a dobókockát, hogy véletlenszerű legyen. Ezeket a
+        köröket addig csináljuk, amíg valakinek az életereje le nem
+        csökken 0-ra. Ha a szörny életereje lemegy 0-ra, akkor mi
+        győztünk, ellenkező esetben vesztettünk és újból kell
+        kezdenünk az egész kalandunkat, nem csak a harcot. Egy kör az
+        alábbi módon néz ki:
         \begin{enumerate}
           \item Dobjunk két kockával a szörny nevében, és két kockadobás összegét adjuk
             hozzá a szörny ügyességi pontjaihoz. Ez lesz az ő \textsc{támadóereje} ebben a körben.
@@ -101,21 +116,21 @@
               \item Abban az esetben ha megegyeznek, akkor kivédtük egymás
                 támadását. Nem sérült senki, nem kerekedett felül senki. Kezdhetjük
                 elölről a kört. Minden marad ugyanúgy.
-              \item Ha a mi támadóerőnk a nagyobb, akkor mi sebeztük a szörnyet. Így a
-                szörny életerejéből levonunk 2-t.
-              \item Ha az ő támadóereje a nagyobb, akkor sebzést kaptunk, így a mi
-                életerőnk csökken 2-vel.
+              \item Ha a mi \textsc{támadóerőnk} a nagyobb, akkor mi sebeztük a szörnyet. Így a
+                szörny \stat{életerejéből} levonunk 2-t.
+              \item Ha az ő \textsc{támadóereje} a nagyobb, akkor sebzést kaptunk, így a mi
+                \stat{életerőnk} csökken 2-vel.
               \item Viszont ezek után még lehetőségünk van javítani az
                 eredményen. Próbára tehetjük a szerencsénket, ami azt jelenti, hogy
                 ismét dobnunk kell mindkét dobókockával. Ha a kapott számok összege
-                kisebb vagy egyenlő, mint a jelenlegi szerencsepontjaink száma,
+                kisebb vagy egyenlő, mint a jelenlegi \stat{szerencse pontjaink} száma,
                 akkor vagyunk szerencsések, ellenkező esetben
                 balszerencsések.
                 \begin{compactitem}[--]
                   \item Ha mi sebeztünk és szerencsénk volt, az azt jelenti, hogy további sebzést
                     tudtunk bevinni a szörnynek, így még 2 pontot levonhatunk tőle.
                   \item Ha mi sebződtünk és szerencsétlenek voltunk, akkor a szörnynek sikerült
-                    még egy csapást bevinni, ezért mi még 2 életerő pontot vesztünk.
+                    még egy csapást bevinni, ezért mi még 2 pontot vesztünk.
                   \item Ha mi sebeztünk, de szerencsétlenül jártunk, akkor egy pontot
                     visszakap az ellenfél.
                   \item Ha sebzést kaptunk és szerencsétlenek voltunk, akkor még egy
@@ -125,21 +140,22 @@
             Minden esetben, amikor igénybe vesszük a
             szerencsénket, akkor a szerencsepontjaink száma egyel csökken.
           \item A kör végén ellenőriznünk kell, hogy nem csökkent-e le a mi vagy az
-            ellenfelünk életerő pontja. Abban az esetben ha igen, akkor vagy
+            ellenfelünk \stat{életerő pontja} 0-ra. Abban az esetben ha igen, akkor vagy
             legyőztük a szörnyet, és folytathatjuk tovább kalandunkat, vagy ha
             az ellenfél győzőtt le minket, akkor elölről kell kezdeni az egész
             kalandot az első oldaltól.
         \end{enumerate} 
       \subsection{Szerencse}
         Nemcsak csatában találkozhatunk azzal a kifejezéssel, hogy
-        \emph{Tedd próbára a szerencsédet!}. Ekkor nem mi döntünk sorsunk
-        alakulásáról, hanem a szerencse befolyásolja kalandunk további
-        menetét. Hasonlóan, mint a csatában dobnunk kell a két kockával
-        egyszerre. Ha az összegük kevesebb vagy egyenlő, mint a szerencse
-        pontjaink száma, akkor szerencsések vagyunk. Ha azonban nagyobb, akkor
-        szerencsétlenek vagyunk. Ennek fényében kell tovább folytatni a
-        kalandunkat. Minden szerencsepróba után a szerencse pontjaink száma
-        egyel csökken.
+        \emph{Tedd próbára a szerencsédet!}. Ekkor nem mi döntünk
+        sorsunk alakulásáról, hanem a szerencse befolyásolja kalandunk
+        további menetét. Hasonlóan, mint a csatában dobnunk kell a két
+        kockával egyszerre. Ha az összegük kevesebb vagy egyenlő, mint
+        a \stat{szerencse pontjaink} száma, akkor szerencsések
+        vagyunk. Ha azonban nagyobb, akkor szerencsétlenek
+        vagyunk. Ennek fényében kell tovább folytatni a
+        kalandunkat. Minden szerencsepróba után a szerencse pontjaink
+        száma egyel csökken.
     
       \section{Játék menete}
         A kaland az 1. oldalon kezdődik és minden oldal végén választani kell,
@@ -153,5 +169,196 @@
         hová akar érkezni.
     \section{Program indítása, használata}
       TODO
-\chap{Fejlesztői dokumentáció}
+      
+\chap{Fejlesztői dokumentáció} A nagyprogramot \proglang{Haskell}
+nyelven implementáltam. Alapvetően két részből áll maga a program, egy
+motorból és a megjelenítésből. A program bemenete egy \proglang{xml}
+fájl. A motor beolvassa ezt a fájlt, átfordítja egy saját nyelvre, ott
+elvégzi a műveleteket, állapotváltozásokat, majd előállít egy
+kimenetet. Ezt a kimenetet bárhogy fel lehet dolgozni, én két féle
+feldolgozást implementáltam. Az egyik egy graf{}ikus felhasználói
+felület, a másik egy webes megvalósítás. Ebből látszik, hogy teljesen
+elkülönül egymástól a motor és a megjelenítés.
+
+  \section{Dokumentáció a történetíráshoz}
+    Mivel a program egy \proglang{xml} fájlt olvas be, ezért ott kell
+    leírni, hogy a könyv különböző sorai milyen műveleteket
+    takarnak. Maga az olvasó is találhat ki történeteket. Ehhez az
+    \proglang{xml} szerkezetének ismerete szükséges.
+
+    \begin{itemize}
+      \item <{\color{Tag}book}> : Gyökér jelölő.
+
+      \item <{\color{Tag}page} {\color{Attr}id}={\color{Value}''400''}
+        {\color{Attr}win}={\color{Value}''1''}> : A könyv oldalakból
+        tevődik össze. Minden új oldal egy ilyen jelölőbe
+        kerül. Attribútumai: \attr{id}, \attr{death}, \attr{win}.  Az
+        \attr{id} attribútum kötelező, ez mondja meg, hogy hányadik
+        oldalon vagyunk. A másik két attribútum csak különleges
+        helyzetekben szerepel. A \attr{death} attribútum azt az
+        információt hordozza magában, hogy az oldal, amire érkeztünk
+        olyan oldal, ahonnan nincs tovább,vagyis a hős kalandja itt
+        véget ér, elbukta küldetését. Hasonlóan a \attr{win}
+        attribútum jelentése, hogy a hős elérkezett céljához, tehát
+        győzött. A nyitó csukó jelölők közé további jelölők jönnek.
+    
+      \item <{\color{Tag}p}> : bekezdést jelöl, tehát ennek a
+        segítségével tudjuk a szöveget tagolni, hogy átláthatóbb,
+        olvashatóbb legyen. Így a nyitó és záró jelölő közé főként
+        szöveg kerül, de lehetnek további jelölők is.
+        
+      \item <{\color{Tag}goto}
+        {\color{Attr}ref}={\color{Value}''2''}/> : Az adott oldal
+        befejeztével hová tudunk továbbmenni. A \attr{ref} attribútum
+        mondja meg, hogy hol folytathatjuk kalandunkat. Ennek a
+        jelölőnek a hatása, hogy az oldalra kikerül a \emph{,,lapozz a
+          2. oldalra''} szöveg.
+    
+      \item <{\color{Tag}Goto}
+        {\color{Attr}ref}={\color{Value}''2''}/> : Hasonló az
+        előzőhöz. A különbség köztük, hogy míg az előző jelölőt egy
+        mondat közepén vagy végén használjuk, addig ez egy új mondatot
+        állít elő a kimenetben. \emph{,,Lapozz a 2. oldalra.''}
+    
+      \item <{\color{Tag}text}> <{\color{Tag}/text}>: Szöveg
+        kiiratása. Nem új bekezdésben folytatódik a szöveg, hanem az
+        adott sorban.
+    
+      \item <{\color{Tag}goto-lucky}
+        {\color{Attr}refYes}={\color{Value}''135''}
+        {\color{Attr}refNo}={\color{Value}''273''}/> : Tedd próbára a
+        szerencsédet!. Attribútumai: \attr{refYes}, \attr{refNo}. Két
+        kockadobásra van szükségünk. Amennyiben a kockadobások
+        szerencsét hoztak nekünk, akkor a \attr{refYes} attribútum
+        által meghatározott oldalra megyünk, ellenkező esetben a
+        \attr{refNo} attribútum mondja meg, hogy kalandunk merre
+        folytatódjon.
+    
+      \item <{\color{Tag}dice} {\color{Attr}name}={\color{Value}''d''}/>
+        : Kockadobást. A name attribútum a kocka nevét jelöli, mert
+        esetenként több kockadobásra is szükségünk van. Tehát meg kell
+        tudnunk különböztetni őket.
+    
+      \item <{\color{Tag}var} {\color{Attr}ref}={\color{Value}''d''}/> :
+        Változóhivatkozás. A d változó értékét adja vissza.
+    
+      \item <{\color{Tag}intlit}
+        {\color{Attr}value}={\color{Value}''5''}/> : Számliterál. A
+        \attr{value} attribútumban kapott szám az értéke.
+    
+      \item <{\color{Tag}lt}> <{\color{Tag}/lt}> : <. (Kisebb.) Binér
+        reláció, tehát két argumentuma van. Igaz értékkel tér vissza,
+        ha az első argumentum kisebb, mint a második. Az argumentumai
+        lehetnek változóhivatkozások, számliterálok.
+    
+      \item <{\color{Tag}le}> <{\color{Tag}/le}> : <=. (Kisebb vagy
+        egyenlő.) Binér reláció. Igaz az értéke, ha az első argumentum
+        kisebb vagy egyenlő, mint a második.
+    
+      \item <{\color{Tag}gt}> <{\color{Tag}/gt}> : >. (Nagyobb.) Binér
+        reláció. Igaz, ha az első argumentum nagyobb, mint a második.
+    
+      \item <{\color{Tag}ge}> <{\color{Tag}/gt}> : >=. (Nagyobb vagy
+        egyenlő.) Binér reláció. Igaz, ha az első argumentuma nagyobb
+        vagy egyenlő, mint a második.
+    
+      \item <{\color{Tag}eq}> <{\color{Tag}/eq}> : ==. (Egyenlő.)
+        Binér reláció. Igaz, ha a két argumentuma egyenlő.
+    
+      \item <{\color{Tag}and}> <{\color{Tag}/and}> : És. Argumentumai
+        logikai értékek. Igaz értékkel tér vissza, ha minden
+        argumentumának értéke igaz, különben hamis értekkel.
+    
+      \item <{\color{Tag}or}> <{\color{Tag}/or}> : Vagy. Argumentumai
+        logikai értékek. Igaz értékkel tér vissza, ha van olyan
+        argumentuma, amelynek értéke igaz. Különben hamissal.
+    
+      \item <{\color{Tag}not}> <{\color{Tag}/not}> : Negáció. Egy
+        argumentuma van, mely egy logikai érték. Igazhoz hamisat,
+        hamishoz igazat rendel.
+    
+      \item <{\color{Tag}cond}> <{\color{Tag}/cond}> : Feltétel. Három
+        argumentuma van. Amennyiben az első argumentum értéke igaz,
+        akkor a második argumentumra kerül a vezérlés, különben a
+        másodikra.
+    
+      \item <{\color{Tag}if}> <{\color{Tag}/if}> : Elágazás. Van egy
+        feltétele, melynek teljesülése esetén az igaz ágra kerül a
+        vezérlés, különben a hamis ágra. Lehetséges az is, hogy nincs
+        hamis ág. Ebben az esetben, ha a feltétel nem teljesül, akkor
+        a következő jelölővel folytatódik a történet.  pl:
+    
+      \item <{\color{Tag}take}
+        {\color{Attr}item}={\color{Value}''item''}/> : Eszköz
+        felvétele. Kalandunk során számon kell tartanunk, hogy milyen
+        eszközökre tettünk szert. Ezekre leginkább a későbbiekben lesz
+        szükségünk. Elérkezhetünk egy olyan megmérettetéshez, melynek
+        sikeressége az adott tárgy birtoklásán múlhat.
+    
+      \item <{\color{Tag}drop}
+        {\color{Attr}item}={\color{Value}''item''}/> : Tárgy eldobása,
+        felhasználása. Ha felhasználunk egy korábban megszerzett
+        tárgyat, de az már a későbbiekben nem marad nálunk, akkor
+        használjuk ezt a jelölőt.
+    
+      \item <{\color{Tag}inc}
+        {\color{Attr}counter}={\color{Value}''item''}/> : Lehet az a
+        feladatunk a kaland során, hogy egy adott tárgyból össze kell
+        gyűjtenünk többet. Ennek a segítségével tudjuk az adott eszköz
+        számát nyilvántartanunk, tehát ha találunk egy újabbat, akkor
+        csak annyit jegyzünk meg, hogy találtunk még egyet.
+    
+      \item <{\color{Tag}dec}
+        {\color{Attr}counter}={\color{Value}''item''}/> : Amikor a
+        gyűjtés során elveszítünk vagy felhasználunk egy tárgyat.
+    
+      \item <{\color{Tag}set-flag}
+        {\color{Attr}flag}={\color{Value}''flag''}/> : Szükségünk lehet
+        arra is, hogy megjegyezzünk olyan dolgokat, hogy már
+        megtörtént velünk egy bizonyos dolog. A későbbiekben ez
+        befolyásolhatja utunkat.
+    
+      \item <{\color{Tag}heal}
+        {\color{Attr}stat}={\color{Value}''stat}''> <{\color{Tag}intlit}
+        {\color{Attr}value}={\color{Value}''1''}> <{\color{Tag}/heal}> :
+        A stat attribútum által meghatározott jellemzőnk
+        növelése. Annyival nő az értéke, amennyi a nyitó és záró
+        jelölő közötti érték.
+    
+      \item <{\color{Tag}damage}
+        {\color{Attr}stat}={\color{Value}''health''}>
+        <{\color{Tag}intlit} {\color{Attr}value}={\color{Value}''1''}>
+        <{\color{Tag}/damage}> : A stat attribútum által meghatározott
+        jellemzőnk csökkenése. Annyival lesz kevesebb az értéke,
+        amennyi a nyitó es záró jelölő közötti érték.
+    
+      \item <{\color{Tag}counter}
+        {\color{Attr}name}={\color{Value}''item''}/> : A name
+        attribútumban meghatározott tárgy számát adja meg, hogy
+        mennyit sikerült összegyűjtenünk belőle.
+    
+      \item <{\color{Tag}carry}
+        {\color{Attr}item}={\color{Value}''item''}/> : Rendelkezünk-e az
+        adott tárggyal.
+    
+      \item <{\color{Tag}plus}> <{\color{Tag}/plus}> : Két argumentuma
+        van, visszaadja ezeknek az attribútumoknak az összegét.
+    
+      \item <{\color{Tag}score}
+        {\color{Attr}stat}={\color{Value}''stat''}/> : A \attr{stat}
+        attribútumban meghatározott jellemzőnk lekérdezése.
+    
+      \item <{\color{Tag}f{}ight}> <{\color{Tag}/f{}ight}> : Harc egy
+        mesebeli lénnyel.
+    
+      \item <{\color{Tag}enemy}
+        {\color{Attr}agility}={\color{Value}''10''}
+        {\color{Attr}health}={\color{Value}''8''}> </enemy> : Az
+        ellenfél, akivel harcolnunk kell. Az attribútumai megadják a
+        lény \stat{ügyességét} és \stat{ételerejét}. A jelölők közti
+        szöveg, pedig a nevét.
+    \end{itemize}
+  \section{Fejlesztői dokumentáció}
+    \subsection{Motor}
+    \subsection{Megjelenítés}
 \end{document}

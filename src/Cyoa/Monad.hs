@@ -79,20 +79,6 @@ newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent (RWST (Array PageNum Pag
             MonadState GameState, MonadReader (Array PageNum Page, [PageItem]), MonadWriter Output,
             Applicative)
 
--- RWS(T) muveletei:
--- Reader:
---   ask :: (Monad m) => CyoaT m (Array PageNum Page)
---   asks :: (Monad m) => (Array PageNum Page -> a) -> CyoaT m a
---   asks f = do
---     r <- ask
---     return $ f r
---
--- State:
---   get :: (Monad m) => CyoaT m PlayerState
---   gets :: (Monad m) => (PlayerState -> a) -> CyoaT m a
---   put :: (Monad m) => PlayerState -> CyoaT m ()
---   modify :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
-
 modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
 modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
 
