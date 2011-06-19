@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[12pt,a4paper,oneside]{report}
 \usepackage{txfonts}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -10,10 +10,10 @@
 \author{Kiss Viktória}
 \date{2011.\ június}
 \maketitle
-\newpage
 \tableofcontents
-\newpage
-\section{Bevezetés}
+
+\addcontentsline{toc}{chapter}{Bevezetés}
+\chapter*{Bevezetés}
   A nagyprogramom alapjául a '80-'90-es évek \emph{Kaland Játék Kockázat}
   könyvei szolgáltak. Ezekben a könyvekben nem hagyományos történetek
   szerepelnek, tehát nem az előre megírt kalandot, történetet olvassa el
@@ -52,9 +52,9 @@
   fel, mennyi az életerő, szerencse és ügyességi pontjaink, mennyit
   dobtunk a dobokockával, stb.
   
-  \section{Felhasználói dokumentáció}
+\chapter{Felhasználói dokumentáció}
 
-    \subsection{Játékszabály}
+    \section{Játékszabályok}
   
       \subsection{Ügyesség, életerő, szerencse pontok}
         Mielőtt elkezdünk egy játékot meg kell határoznunk a fent említett
@@ -133,7 +133,7 @@
         kalandunkat. Minden szerencsepróba után a szerencse pontjaink száma
         egyel csökken.
     
-      \subsection{Játék menete}
+      \section{Játék menete}
         A kaland az 1. oldalon kezdődik és minden oldal végén választani kell,
         hogy merre szeretnénk tovább haladni. Van, hogy csak két út áll
         előttünk, de van, hogy sok lehetőség közül választhatunk. Cél, hogy
@@ -143,6 +143,7 @@
         elolvashatjuk a háttértörténetet, amelyből kiderül, hogy a hősnek,
         akinek kalandjait mi választjuk meg, mi a célja. Honnan indul és
         hová akar érkezni.
-    \subsection{Program indítása, használata}
+    \section{Program indítása, használata}
       TODO
+\chapter{Fejlesztői dokumentáció}
 \end{document}
