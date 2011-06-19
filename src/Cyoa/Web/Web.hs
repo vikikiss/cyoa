@@ -45,6 +45,26 @@ mkYesod "CyoaWeb" [$parseRoutes|
 instance Yesod CyoaWeb where
     approot _ = ""
     -- clientSessionDuration _ = 60
+    defaultLayout contents = do
+      PageContent title head body <- widgetToPageContent $ do
+        addCassius $ [$cassius|
+                      .btn, .btnUsed, a
+                        color: blue
+                        text-decoration: underline
+                      .btn
+                        cursor: pointer
+                     |]
+        addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"
+        addWidget contents
+      hamletToRepHtml [$hamlet|
+                       !!!
+                       <html>
+                         <head>
+                           <title>#{title}
+                           ^{head}
+                         <body>
+                           ^{body}
+                       |]
 
 instance SinglePiece Link where
   toSinglePiece = pack . show
@@ -113,29 +133,22 @@ stepEngine f = do
   setState s'
   return (x, w)
 
+render output@(OutputClear title _) = defaultLayout $ do
+  setTitle $ string title
+  addHamlet $ toHamlet output
+render output@(OutputContinue _) = hamletToRepHtml $ toHamlet output
 
 getPRoot :: Handler RepHtml
 getPRoot = do
   (result, output) <- stepEngine evalPage
-  case output of
-    OutputClear title _ -> defaultLayout $ do
-      setTitle $ string title
-      addCassius $ [$cassius|
-                    .btn, .btnUsed, a
-                      color: blue
-                      text-decoration: underline
-                    .btn
-                      cursor: pointer
-                   |]
-      addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"
-      addHamlet $ toHamlet output
-    OutputContinue _ -> hamletToRepHtml $ toHamlet output
+  render output
 
-getPStart :: Handler ()
+getPStart :: Handler RepHtml
 getPStart = do
   (state, output) <- liftIO $ runWriterT mkGameState
   setState state
-  redirect RedirectTemporary PRoot
+  render output
+  -- redirect RedirectTemporary PRoot
 
 getPGoto :: Link -> Handler ()
 getPGoto link = do
