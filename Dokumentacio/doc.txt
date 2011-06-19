@@ -139,80 +139,129 @@ egymástól a motor és a megjelenítés.
   a könyv különböző sorai milyen műveleteket takarnak. Maga az olvasó
   is találhat ki történeteket. Ehhez az xml szerkezetének ismerete szükséges. 
 
-  <book> : gyökér jelölő.
-  <page id="400" win="1"> : A könyv oldalakból tevődik össze. Minden új oldal egy ilyen
-  jelölőbe kerül. Attribútumai: id, death, win.
-  Az id attribútum minden <page> jelölőben szerepel, ez mondja meg, hogy hányadik
-  oldalon vagyunk. A death attribútum azt az információt hordozza magában,
-  hogy az oldal, amire érkeztünk olyan oldal, ahonnan nincs tovább,vagyis a
-  hős kalandja itt véget ér, elbukta küldetését. Hasonlóan a win
-  attribútum jelentése, hogy a hős elérkezett céljához, vagyis győzött.
-  A <page> </page> közé további jelölők jönnek.
-  <p> : bekezdést jelöl. A nyitó és záró jelölő közé főként szöveg kerül, és
-  további jelölők.
-  <goto ref="2"/> : Ez a jelölő általában minden oldal alján szerepel.
-  Ez jelenti, hogy az adott oldal végén hová tudunk
-  továbbmenni. Attribútuma: ref. Itt mondjuk meg, hogy hol
-  folytathatjuk kalandunkat az oldal befejeztével. Ennek a jelölőnek a
-  hatása, hogy az oldalra kikerül a "lapozz a 2. oldalra" szöveg.
+  <book> : Gyökér jelölő.
+
+  <page id="400" win="1"> : A könyv oldalakból tevődik össze. Minden
+  új oldal egy ilyen jelölőbe kerül. Attribútumai: id, death, win.  Az
+  id attribútum minden <page> jelölőben szerepel, ez mondja meg, hogy
+  hányadik oldalon vagyunk. A death attribútum azt az információt
+  hordozza magában, hogy az oldal, amire érkeztünk olyan oldal,
+  ahonnan nincs tovább,vagyis a hős kalandja itt véget ér, elbukta
+  küldetését. Hasonlóan a win attribútum jelentése, hogy a hős
+  elérkezett céljához, tehát győzött. A <page> </page> közé további
+  jelölők jönnek.
+  
+  <p> : bekezdést jelöl, tehát ennek a segítségével tudjuk a szöveget
+  tagolni, hogy átláthatóbb, olvashatóbb legyen. Így a nyitó és záró
+  jelölő közé főként szöveg kerül, de lehetnek további jelölők is.
+
+  <goto ref="2"/> : Az adott oldal befejeztével hová tudunk
+  továbbmenni. A ref attribútum mondja meg, hogy hol folytathatjuk
+  kalandunkat. Ennek a jelölőnek a hatása, hogy az oldalra kikerül a
+  "lapozz a 2. oldalra" szöveg.
+
   <Goto ref="2"/> : Hasonló az előzőhöz. A különbség köztük, hogy míg
-  az előző jelölőt egy mondat közepén vagy végén használjuk, addig ez egy új mondatot
-  állít elő a kimenetben. "Lapozz a 2. oldalra."
+  az előző jelölőt egy mondat közepén vagy végén használjuk, addig ez
+  egy új mondatot állít elő a kimenetben. "Lapozz a 2. oldalra."
+
   <text> </text>: Szöveg kiiratása. Nem új bekezdésben folytatódik a
   szöveg, hanem az adott sorban.
-  <goto-lucky refYes="135" refNo="273"/> : Ez a jelölő jelenti, hogy tedd
-  próbára a szerencsédet. Attribútumai: refYes, refNo. Két
-  kockadobásra van szükségünk. Amennyiben a kockadobások szerencsét
-  hoztak nekünk, akkor a refYes attribútum által tárolt oldalra
-  megyünk, ellenkező esetben a refNo attribútum mondja meg, hogy
-  kalandunk merre folytatódjon.
-  <dice name="d"/> : Kockadobást jelenti. Attribútuma: name. A kocka
+
+  <goto-lucky refYes="135" refNo="273"/> : Tedd próbára a
+  szerencsédet!. Attribútumai: refYes, refNo. Két kockadobásra van
+  szükségünk. Amennyiben a kockadobások szerencsét hoztak nekünk,
+  akkor a refYes attribútum által meghatározott oldalra megyünk,
+  ellenkező esetben a refNo attribútum mondja meg, hogy kalandunk
+  merre folytatódjon.
+
+  <dice name="d"/> : Kockadobást. A name attribútum a kocka
   nevét jelöli, mert esetenként több kockadobásra is szükségünk
   van. Tehát meg kell tudnunk különböztetni őket.
-  <var ref="d"/> : Változóhivatkozás. A d változó értékét adja
-  vissza.
+
+  <var ref="d"/> : Változóhivatkozás. A d változó értékét adja vissza.
+
   <intlit value="5"/> : Számliterál. A value attribútumban kapott szám
   az értéke.
-  <lt> </lt> : <. (Kisebb.) Binér reláció, tehát két argumentuma van. Igaz értékkel tér vissza, ha az
-  első argumentum kisebb, mint a második. Az argumentumai lehetnek
-  változóhivatkozások, számliterálok.
+
+  <lt> </lt> : <. (Kisebb.) Binér reláció, tehát két argumentuma
+  van. Igaz értékkel tér vissza, ha az első argumentum kisebb, mint a
+  második. Az argumentumai lehetnek változóhivatkozások,
+  számliterálok.
+
   <le> </le> : <=. (Kisebb vagy egyenlő.) Binér reláció. Igaz az
   értéke, ha az első argumentum kisebb vagy egyenlő, mint a második.
+
   <gt> </gt> : >. (Nagyobb.) Binér reláció. Igaz, ha az első
   argumentum nagyobb, mint a második.
+
   <ge> </gt> : >=. (Nagyobb vagy egyenlő.) Binér reláció. Igaz, ha az
   első argumentuma nagyobb vagy egyenlő, mint a második.
+
   <eq> </eq> : ==. (Egyenlő.) Binér reláció. Igaz, ha a két
   argumentuma egyenlő.
+
   <and> </and> : És. Argumentumai logikai értékek. Igaz értékkel tér
   vissza, ha minden argumentumának értéke igaz, különben hamis értekkel.
+
   <or> </or> : Vagy. Argumentumai logikai értékek. Igaz értékkel tér
   vissza, ha van olyan argumentuma, amelynek értéke igaz. Különben hamissal.
-  <not> </not> : Nem. Egy argumentuma van, mely egy logikai
+
+  <not> </not> : Negáció. Egy argumentuma van, mely egy logikai
   érték. Igazhoz hamisat, hamishoz igazat rendel.
-  
-  
+
+  <cond> </cond> : Feltétel. Három argumentuma van. Amennyiben az első
+  argumentum értéke igaz, akkor a második argumentumra kerül a
+  vezérlés, különben a másodikra.
+  TODO: kulonbseg if es cond kozott
+
   <if> </if> : Elágazás. Van egy feltétele, melynek teljesülése esetén
   az igaz ágra kerül a vezérlés, különben a hamis ágra. Lehetséges az
   is, hogy nincs hamis ág. Ebben az esetben, ha a feltétel nem
   teljesül, akkor a következő jelölővel folytatódik a történet.
-  <le>
- 
-  <cond> </cond>
-  <take item="item"/>
-  <drop item="item/>
-  <inc counter="item"/>
-  <dec counter="item/> (?)
-  <set-flag flag="cipo"/>
-  <heal stat="health"> <intlit value="1"></heal>
-  <damage stat="healt"> </damage>
-  <counter name="item"/>
-  <carry item="item"/>
-  <plus> </plus>
-  <score stat="agility"/>
-  <fight>
-    <enemy agility="10" health="8">Csontördög</enemy>
-    </fight>            
+  pl: 
 
-tag-jelolo
-book-root tag
+  <take item="item"/> : Eszköz felvétele. Kalandunk során számon kell
+  tartanunk, hogy milyen eszközökre tettünk szert. Ezekre leginkább a
+  későbbiekben lesz szükségünk. Elérkezhetünk egy olyan
+  megmérettetéshez, melynek sikeressége az adott tárgy birtoklásán múlhat.
+
+  <drop item="item/> : Tárgy eldobása, felhasználása. Ha felhasználunk
+  egy korábban megszerzett tárgyat, de az már a későbbiekben nem marad
+  nálunk, akkor használjuk ezt a jelölőt.
+
+  <inc counter="item"/> : Lehet az a feladatunk a kaland során, hogy
+  egy adott tárgyból össze kell gyűjtenünk többet. Ennek a segítségével tudjuk az adott
+  eszköz számát nyilvántartanunk, tehát ha találunk egy újabbat, akkor
+  csak annyit jegyzünk meg, hogy találtunk még egyet.
+
+  <dec counter="item/> : Amikor a gyűjtés során elveszítünk vagy
+  felhasználunk egy tárgyat.
+
+  <set-flag flag="cipo"/> : Szükségünk lehet arra is, hogy
+  megjegyezzünk olyan dolgokat, hogy már megtörtént velünk egy
+  bizonyos dolog. A későbbiekben ez befolyásolhatja utunkat.
+  
+  <heal stat="stat"> <intlit value="1"> </heal> : A stat attribútum
+  által meghatározott jellemzőnk növelése. Annyival nő az értéke,
+  amennyi a nyitó és záró jelölő közötti érték.
+
+  <damage stat="health"> <intlit value="1"> </damage> : A stat
+  attribútum által meghatározott jellemzőnk csökkenése. Annyival lesz
+  kevesebb az értéke, amennyi a nyitó es záró jelölő közötti érték.
+  
+  <counter name="item"/> : A name attribútumban meghatározott tárgy
+  számát adja meg, hogy mennyit sikerült összegyűjtenünk belőle.
+
+  <carry item="item"/> : Rendelkezünk-e az adott tárggyal.
+  
+  <plus> </plus> : Két argumentuma van, visszaadja ezeknek az
+  attribútumoknak az összegét.
+  
+  <score stat="stat"/> : A stat attribútumban meghatározott jellemzőnk lekérdezése.
+
+  <fight> </fight> : Harc egy mesebeli lénnyel.
+
+  <enemy agility="10" health="8"> </enemy> : Az ellenfél,
+  akivel harcolnunk kell. Az attribútumai megadják a lény ügyességét
+  és ételerejét. A jelölők közti szöveg, pedig a nevét.
+
