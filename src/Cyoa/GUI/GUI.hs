@@ -2,7 +2,7 @@ module Main where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
-  
+
 import Graphics.UI.Gtk hiding (eventClick)
 import Graphics.UI.Gtk.Gdk.Events
 import Control.Monad.Trans
@@ -13,22 +13,22 @@ import Control.Monad.RWS
 import Cyoa.Parser
 import Cyoa.Engine
 import Cyoa.PageLang
-import Cyoa.Monad  
-  
+import Cyoa.Monad
+
 import System.Environment
 import System.Exit
 import System.IO
 
 import Data.IORef
-import System.IO.Unsafe  
+import System.IO.Unsafe
 
 data GUICtxt = GUICtxt { gui_buf :: TextBuffer
                        , gui_view :: TextView
                        , gui_stat_labels :: Map Stat Label
                        }
 
-type GUI a = ReaderT GUICtxt IO a             
-  
+type GUI a = ReaderT GUICtxt IO a
+
 -- TODO: always insert text to end of buffer
 insertTextToBuf :: String -> GUI (TextIter, TextIter)
 insertTextToBuf text = do
@@ -36,12 +36,12 @@ insertTextToBuf text = do
   view <- asks gui_view
   lift $ do
     before <- textMarkNew Nothing True
-    do            
+    do
       iterEnd <- textBufferGetEndIter buf
-      textBufferAddMark buf before iterEnd  
+      textBufferAddMark buf before iterEnd
       textBufferInsert buf iterEnd text
     start <- textBufferGetIterAtMark buf before
-    end <- textBufferGetEndIter buf  
+    end <- textBufferGetEndIter buf
     textBufferDeleteMark buf before
     Just scrollMark <- textBufferGetMark buf "scroll"
     textViewScrollToMark view scrollMark 0 (Just (0, 0))
@@ -70,24 +70,24 @@ stepEngine f = do
   (x, s', w) <- lift $ stepCyoa f pages s
   lift $ writeIORef refState s'
   return (x, w)
-           
+
 insertLinkToBuf text link = do
   buf <- asks gui_buf
   ctx <- ask
-  linkCount <- lift $ readIORef refLinkCount                              
+  linkCount <- lift $ readIORef refLinkCount
   (start, end) <- insertTextToBuf text
   lift $ do
-    tag <- textTagNew Nothing         
+    tag <- textTagNew Nothing
     set tag [ textTagForeground := "blue", textTagUnderline := UnderlineSingle ]
     textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
     textBufferApplyTag buf tag start end
-                     
+
     onTextTagEvent tag $ \e iter -> do
       case e of
         Button{} -> when (eventClick e == ReleaseClick) $ do
                       linkCount' <- readIORef refLinkCount
                       when (linkCount == linkCount') $ runReaderT `flip` ctx $ do
-                        (result, output) <- stepEngine (goto link >> evalPage)                                            
+                        (result, output) <- stepEngine (goto link >> evalPage)
                         render output
                         case result of
                           Left DeathEvent -> liftIO $ putStrLn "Meghaltal"
@@ -105,13 +105,13 @@ insertLinkToBuf text link = do
 setupTextBuf buf = do
   addTag "header" [ textTagScale := 1.6, textTagJustification := JustifyCenter ]
   addTag "good" [ textTagForeground := "green" ]
-  addTag "bad" [ textTagForeground := "red" ]         
+  addTag "bad" [ textTagForeground := "red" ]
     where addTag name attrs = do
             tag <- textTagNew (Just name)
             set tag attrs
             textTagTableAdd `flip` tag =<< textBufferGetTagTable buf
-                     
-             
+
+
 main = do
   args <- initGUI
   pages <- case args of
@@ -125,7 +125,7 @@ main = do
   on wnd deleteEvent $ do
     lift $ mainQuit
     return True
-    
+
   buf <- textBufferNew Nothing
   setupTextBuf buf
   tview <- textViewNewWithBuffer buf
@@ -133,49 +133,49 @@ main = do
   scrollMark <- textMarkNew (Just "scroll") False
   end <- textBufferGetEndIter buf
   textBufferAddMark buf scrollMark end
-           
+
   set tview [textViewWrapMode := WrapWord, textViewPixelsAboveLines := 10,
              textViewLeftMargin := 10, textViewRightMargin := 10,
              textViewIndent := 10]
   textViewSetEditable tview False
   textViewSetCursorVisible tview False
-  
-  widgetSetSizeRequest tview 400 600  
+
+  widgetSetSizeRequest tview 400 600
 
   hbox <- hBoxNew False 0
   image <- imageNewFromFile "../pictures/twoHeadedDog.jpg"
   containerAdd hbox image
-  
-                       
+
+
   scrollwin <- scrolledWindowNew Nothing Nothing
   scrolledWindowSetPolicy scrollwin PolicyNever PolicyAutomatic
-  containerAdd scrollwin tview                          
+  containerAdd scrollwin tview
 
   statusbar <- statusbarNew
   let statusLabel icon = do
          hbox <- hBoxNew False 0
-         containerAdd hbox =<< imageNewFromFile icon -- TODO: more robust finding of icons                        
+         containerAdd hbox =<< imageNewFromFile icon -- TODO: more robust finding of icons
          label <- labelNew Nothing
          containerAdd hbox label
          boxPackStart statusbar hbox PackNatural 0
-         return label         
-         
+         return label
+
   labelHealth <- statusLabel "heart_icon.png"
   labelAgility <- statusLabel "sword_icon.png"
   labelLuck <- statusLabel "luck_icon.png"
 
   let stat_labels = Map.fromList [(Health, labelHealth), (Agility, labelAgility), (Luck, labelLuck)]
-               
+
   vbox <- vBoxNew False 0
   containerAdd vbox scrollwin
   containerAdd vbox statusbar
 
   containerAdd hbox vbox
   containerAdd wnd hbox
-  
-  widgetShowAll wnd  
-                
-  s0 <- mkGameState
+
+  widgetShowAll wnd
+
+  (s0, output0) <- runWriterT mkGameState
   -- TODO: stepEngine
   (_, s, output) <- stepCyoa `flip` pages `flip` s0 $ do
                       evalPage
@@ -189,18 +189,17 @@ render (OutputClear title outItems) = do
   lift $ writeIORef refLinkCount 0
   lift $ textBufferSetText buf ""
   insertHeader title
-  render (OutputContinue outItems)  
+  render (OutputContinue outItems)
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
 
   (Right state, _) <- stepEngine (gets id)
-  liftIO $ print state
-       
-  stat_labels <- asks gui_stat_labels       
+
+  stat_labels <- asks gui_stat_labels
   forM_ (Map.toList stat_labels) $ \(stat, label) -> do
     (Right value, _) <- stepEngine (getStat stat)
-    lift $ labelSetText label (show value)                        
-            
+    lift $ labelSetText label (show value)
+
   display outItems
     where
       display (OutBreak:os) = insertTextToBuf "\n" >> display os
@@ -208,7 +207,7 @@ render (OutputContinue outItems) = do
         forM_ enemies $ \enemy -> do
           display [OutText Nothing (show enemy), OutBreak]
         display os
-      display ((OutText a s):os) = do        
+      display ((OutText a s):os) = do
         buf <- asks gui_buf
         (start, end) <- insertTextToBuf s
         case a of
@@ -227,7 +226,7 @@ render (OutputContinue outItems) = do
           anchor <- textBufferCreateChildAnchor buf =<< textBufferGetEndIter buf
           roll <- buttonNewWithLabel "Dobj"
           on roll buttonActivated $ do
-            set roll [widgetSensitive := False, buttonLabel := show n]              
+            set roll [widgetSensitive := False, buttonLabel := show n]
             runReaderT (display os) ctx
           widgetShow roll
           textViewAddChildAtAnchor view roll anchor

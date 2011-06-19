@@ -2,8 +2,8 @@
 module Cyoa.Engine where
 
 import Cyoa.PageLang
-import Cyoa.Monad  
-  
+import Cyoa.Monad
+
 import Control.Monad.RWS
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -13,8 +13,8 @@ import Control.Applicative
 import Control.Monad.Error
 
 emit :: (Monad m) => [OutputItem] -> CyoaT m ()
-emit = tell . OutputContinue    
-    
+emit = tell . OutputContinue
+
 evalExpr :: (Monad m, Functor m) => Expr -> CyoaT m Int
 evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
@@ -22,25 +22,25 @@ evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
 evalExpr (e :*: f) = (*) <$> evalExpr e <*> evalExpr f
 evalExpr (e :%: f) = mod <$> evalExpr e <*> evalExpr f
 evalExpr (DieRef die) = getDice die
-evalExpr (CounterRef counter) = getCounter counter                     
+evalExpr (CounterRef counter) = getCounter counter
 evalExpr (StatQuery a) = getStat a
 evalExpr (ECond cond thn els) = do
   b <- evalCond cond
   evalExpr (if b then thn else els)
-                            
+
 evalCond :: (Monad m, Functor m) => Cond -> CyoaT m Bool
 evalCond (CLiteral b) = return b
 evalCond (c :||: d) = (||) <$> evalCond c <*> evalCond d
 evalCond (c :&&: d) = (&&) <$> evalCond c <*> evalCond d
-evalCond (e :<: f) = (<) <$> evalExpr e <*> evalExpr f                      
-evalCond (e :<=: f) = (<=) <$> evalExpr e <*> evalExpr f                      
-evalCond (e :>: f) = (>) <$> evalExpr e <*> evalExpr f                      
-evalCond (e :>=: f) = (>=) <$> evalExpr e <*> evalExpr f                      
-evalCond (e :==: f) = (==) <$> evalExpr e <*> evalExpr f                      
+evalCond (e :<: f) = (<) <$> evalExpr e <*> evalExpr f
+evalCond (e :<=: f) = (<=) <$> evalExpr e <*> evalExpr f
+evalCond (e :>: f) = (>) <$> evalExpr e <*> evalExpr f
+evalCond (e :>=: f) = (>=) <$> evalExpr e <*> evalExpr f
+evalCond (e :==: f) = (==) <$> evalExpr e <*> evalExpr f
 evalCond (CNot c) = not <$> evalCond c
-evalCond (Carry item) = carries item                    
+evalCond (Carry item) = carries item
 evalCond (FlagSet flag) = flagSet flag
-                      
+
 evalPage :: (Functor m, MonadIO m) => CyoaT m ()
 evalPage = do
   fightState <- gets fight_state
@@ -81,18 +81,17 @@ applyLastRound = do
            , outText " pont értékben! "
            ]
       modifyStat (\hp -> hp - damage) Health
-      
+
   where
     ifLucky thn els = do
       d1 <- roll
       d2 <- roll
       luck <- getStat Luck
-      modifyStat (\x -> x - 1) Luck                          
+      modifyStat (\x -> x - 1) Luck
       let lucky = d1 + d2 <= luck
-      emit [ OutDie d1
-           , OutDie d2
-           , if lucky then OutText (Just Good) "Micsoda mázli! " else OutText (Just Bad) "Pech. "
-           ]
+      emit [ if lucky
+               then OutText (Just Good) "Micsoda mázli! "
+               else OutText (Just Bad) "Pech. "]
       if lucky then thn else els
 
     hurtEnemy damage = do
@@ -102,7 +101,7 @@ applyLastRound = do
         then do
           modifyFightState $ \fs -> fs{ fight_enemies = es }
           emit [ outText $ unwords ["A(z)", enemy_name e, "holtan dől össze."] ] -- TODO: A(z)
-        else 
+        else
           modifyFightState $ \fs -> fs{ fight_enemies = (e':es) }
 
 calculateAttack :: (Functor m, MonadIO m) => Enemy -> CyoaT m ()
@@ -110,12 +109,12 @@ calculateAttack enemy = do
   emit [outText "Dobj a szörny nevében! "]
   enemyAttack <- rollAttack (enemy_agility enemy)
   emit [outText " A szörny támadóereje: ", outText (show enemyAttack), OutBreak]
-       
+
   emit [outText "Dobj a saját támadásodért! "]
   playerAttack <- rollAttack =<< (getStat Agility)
   emit [outText " A Te támadóerőd: ", outText (show playerAttack), OutBreak]
   case enemyAttack `compare` playerAttack of
-    EQ -> 
+    EQ ->
       emit [ outText "Kivédtétek egymás csapását! "
            , OutLink (ContinueFightLink Nothing) "Folytasd a csatát!"]
     LT -> do
@@ -124,7 +123,7 @@ calculateAttack enemy = do
     GT -> do
       emit [OutText (Just Bad) "Megsebez a teremtmény! "]
       emitTryLuck AttackerEnemy
-        
+
   where emitTryLuck attacker = do
           emit [ OutBreak
                , outText "Próbára teszed a szerencsédet? "
@@ -132,36 +131,32 @@ calculateAttack enemy = do
                , outText " "
                , OutLink (ContinueFightLink (Just (FightRound attacker True))) "Igen."
                ]
-                     
+
 fight :: (Functor m, MonadIO m) => CyoaT m ()
 fight = do
   applyLastRound
 
   fs <- gets $ fromJust . fight_state
-  
+
   let enemies = fight_enemies fs
   case enemies of
     [] -> do
       let is = fight_cont fs
       modify $ \gs -> gs{ fight_state = Nothing }
       evalPageItems is
-      
+
     (enemy:_) -> do
-      emit [OutEnemies enemies]                 
+      emit [OutEnemies enemies]
       calculateAttack enemy
-           
-rollAttack agility = do    
-    d1 <- roll
-    d2 <- roll
-    emit [OutDie d1, OutDie d2]
-    return $ agility + d1 + d2
+
+rollAttack agility = (agility +) <$> ((+) <$> roll <*> roll)
 
 evalPageItems :: (Functor m, MonadIO m) => [PageItem] -> CyoaT m ()
 evalPageItems [] = return ()
 evalPageItems (i:is) = do
   local (\(pages, _) -> (pages, is)) $ evalPageItem i
   evalPageItems is
-           
+
 evalPageItem :: (Functor m, MonadIO m) => PageItem -> CyoaT m ()
 evalPageItem (Paragraph is) = do
   mapM_ evalPageItem is
@@ -176,7 +171,7 @@ evalPageItem (Goto capitalize pageNum) = do
             | pageNum `elem` [2, 3, 4, 6, 7, 8, 9] = True
             | pageNum < 50 = True
             | pageNum < 60 = False
-            | otherwise = True                                                     
+            | otherwise = True
 evalPageItem (Inc counter) = modifyCounter succ counter
 evalPageItem (Dec counter) = modifyCounter pred counter
 evalPageItem (Clear counter) = modifyCounter (const 0) counter
@@ -200,7 +195,6 @@ evalPageItem (Heal stat expr) = do
 evalPageItem (Set flag) = setFlag flag
 evalPageItem (DieDef name) = do
   n <- roll
-  emit [OutDie n]
   addDice name n
 evalPageItem (Fight enemies) = do
   is <- asks snd
@@ -210,11 +204,11 @@ evalPageItem (Fight enemies) = do
   modify $ \gs -> gs{ fight_state = Just fs }
   emit [OutLink StartFightLink "Harcolj!"]
   throwError FightEvent
-                               
+
 goto :: (MonadIO m) => Link -> CyoaT m ()
 goto (PageLink pageNum) =
-  modifyPlayerState $ \ps -> ps{ player_page = pageNum }  
+  modifyPlayerState $ \ps -> ps{ player_page = pageNum }
 goto StartFightLink = return ()
-goto (ContinueFightLink round) = 
+goto (ContinueFightLink round) =
   modifyFightState (\fs -> fs{ fight_last_round = round })
 

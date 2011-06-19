@@ -5,11 +5,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 -- module Cyoa.Web.Web where
 
-import Cyoa.Monad  
+import Cyoa.Monad
 import Cyoa.Parser
 import Cyoa.PageLang
 import Cyoa.Engine
-  
+
 import Control.Monad.State
 
 import Yesod
@@ -24,33 +24,34 @@ import System.Exit
 import System.IO
 import System.IO.Unsafe
 import Control.Monad.RWS
-  
-import qualified Text.Blaze.Html4.Strict as HTML  
+import Control.Monad.Writer
+
+import qualified Text.Blaze.Html4.Strict as HTML
 import Text.Hamlet
-  
+
 import Data.Set (Set)
 import qualified Data.Set as Set
-  
+
 data CyoaWeb = CyoaWeb
-               
+
 type Handler = GHandler CyoaWeb CyoaWeb
 
-mkYesod "CyoaWeb" [$parseRoutes|                     
+mkYesod "CyoaWeb" [$parseRoutes|
 / PRoot GET
 /start PStart GET
-/goto/#Link PGoto GET       
+/goto/#Link PGoto GET
 |]
 
 instance Yesod CyoaWeb where
     approot _ = ""
-    -- clientSessionDuration _ = 60                
+    -- clientSessionDuration _ = 60
 
 instance SinglePiece Link where
   toSinglePiece = pack . show
   fromSinglePiece s = case reads $ unpack s of
                         ((link, _):_) -> Just link
                         [] -> Nothing
-  
+
 
 type LinkFactory = Route CyoaWeb -> [(Text, Text)] -> Text
 type Ham = LinkFactory -> Html
@@ -64,21 +65,21 @@ toHamlet (OutputContinue items) = itemsToHamlet 0 items
 
 itemsToHamlet :: Int -> [OutputItem] -> Ham
 itemsToHamlet x [] = [$hamlet|
-                      <br> 
+                      <br>
                       <div #cont>
                      |]
 itemsToHamlet x ((OutText _ s):is) = [$hamlet|
-                                      #{s} 
+                                      #{s}
                                       ^{itemsToHamlet x is}
                                      |]
 itemsToHamlet x (OutBreak:is) = [$hamlet|
-                                 <br> 
+                                 <br>
                                  ^{itemsToHamlet x is}
                                 |]
 itemsToHamlet x ((OutDie n):is) = [$hamlet|
-                                   ^{roll} 
+                                   ^{roll}
                                    <span #hide-#{x} style="visibility:hidden">
-                                     [#{n}]                     
+                                     [#{n}]
                                      ^{itemsToHamlet (succ x) is}
                                   |]
   where roll = [$hamlet|<a .btn #roll-#{x} onClick="$('#roll-#{x}').remove(); $('#hide-#{x}').css('visibility','visible'); $('#hide-#{x}').removeAttr('id')">Dobj!|]
@@ -89,8 +90,8 @@ itemsToHamlet x ((OutLink link s):is) = [$hamlet|
   where linkToHamlet link@(PageLink _) = [$hamlet|<a href="@{PGoto link}">#{s}|]
         linkToHamlet link = [$hamlet|<a .btn onClick="$.get('@{PGoto link}', function(newPage){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(newPage);})">#{s}|]
 itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
-                              
-                
+
+
 getState :: Handler GameState
 getState = do
   state <- lookupSession "state"
@@ -99,7 +100,7 @@ getState = do
     Just state -> return $ unserialize state
 
 setState :: GameState -> Handler ()
-setState = setSession "state" . serialize 
+setState = setSession "state" . serialize
 
 refPages :: IORef [Page]
 refPages = unsafePerformIO $ newIORef (error "refPages")
@@ -111,41 +112,41 @@ stepEngine f = do
   (x, s', w) <- liftIO $ stepCyoa f pages s
   setState s'
   return (x, w)
-  
-           
+
+
 getPRoot :: Handler RepHtml
 getPRoot = do
   (result, output) <- stepEngine evalPage
   case output of
     OutputClear title _ -> defaultLayout $ do
       setTitle $ string title
-      addCassius $ [$cassius| 
+      addCassius $ [$cassius|
                     .btn, .btnUsed, a
                       color: blue
                       text-decoration: underline
-                    .btn  
+                    .btn
                       cursor: pointer
                    |]
       addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"
       addHamlet $ toHamlet output
     OutputContinue _ -> hamletToRepHtml $ toHamlet output
-           
+
 getPStart :: Handler ()
 getPStart = do
-  state <- liftIO $ mkGameState
+  (state, output) <- liftIO $ runWriterT mkGameState
   setState state
   redirect RedirectTemporary PRoot
 
-getPGoto :: Link -> Handler ()  
+getPGoto :: Link -> Handler ()
 getPGoto link = do
   stepEngine (goto link)
   redirect RedirectTemporary PRoot
 
 serialize :: GameState -> Text
-serialize = pack . show           
-           
+serialize = pack . show
+
 unserialize = read . unpack
-               
+
 main = do
   args <- getArgs
   pages <- case args of
@@ -156,4 +157,4 @@ main = do
   writeIORef refPages pages
 
   warpDebug 3000 CyoaWeb
-           
+
