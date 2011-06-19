@@ -39,7 +39,7 @@ mkYesod "CyoaWeb" [$parseRoutes|
 / PRoot GET
 /start PStart GET
 /goto/#Link PGoto GET       
-|]  
+|]
 
 instance Yesod CyoaWeb where
     approot _ = ""
@@ -52,7 +52,6 @@ instance SinglePiece Link where
                         [] -> Nothing
   
 
--- type Ham = State [Int] (Hamlet (Route CyoaWeb))
 type LinkFactory = Route CyoaWeb -> [(Text, Text)] -> Text
 type Ham = LinkFactory -> Html
 
@@ -68,8 +67,14 @@ itemsToHamlet x [] = [$hamlet|
                       <br> 
                       <div #cont>
                      |]
-itemsToHamlet x ((OutText _ s):is) = [$hamlet|#{s} ^{itemsToHamlet x is}|]
-itemsToHamlet x (OutBreak:is) = [$hamlet|<br> ^{itemsToHamlet x is}|]
+itemsToHamlet x ((OutText _ s):is) = [$hamlet|
+                                      #{s} 
+                                      ^{itemsToHamlet x is}
+                                     |]
+itemsToHamlet x (OutBreak:is) = [$hamlet|
+                                 <br> 
+                                 ^{itemsToHamlet x is}
+                                |]
 itemsToHamlet x ((OutDie n):is) = [$hamlet|
                                    ^{roll} 
                                    <span #hide-#{x} style="visibility:hidden">
@@ -82,7 +87,7 @@ itemsToHamlet x ((OutLink link s):is) = [$hamlet|
                                          ^{itemsToHamlet x is}
                                         |]
   where linkToHamlet link@(PageLink _) = [$hamlet|<a href="@{PGoto link}">#{s}|]
-        linkToHamlet link = [$hamlet|<a .btn onClick="$.get('@{PGoto link}', function(o){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(o);})">#{s}|]
+        linkToHamlet link = [$hamlet|<a .btn onClick="$.get('@{PGoto link}', function(newPage){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(newPage);})">#{s}|]
 itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
                               
                 
