@@ -1,0 +1,218 @@
+A nagyprogramom alapjául a '80-'90-es évek Kaland Játék Kockázat
+könyvei szolgáltak. Ezekben a könyvekben nem hagyományos történetek
+szerepelnek, tehát nem az előre megírt kalandot, történetet olvassa el
+az olvasó, helyette sok apró fejezetre van bontva a cselekmény, melyek
+végén választási lehetőség áll. Így az olvasóra van bízva, hogy hogyan
+folytatja tovább a történetet. Vagyis az olvasó lett maga a kalandor,
+aki kedve szerint formálhatta a történéseket attól függően, hogy
+mennyire bátor, kíváncsi, leleményes és kalandvágyó. Ezek a kalandok
+nagyrészt nem valós történeteket foglalnak magukba, hanem a fantázia
+világában játszódnak, meseszerű fordulatokkal, mesebeli lényekkel. A
+olvasónak, vagyis a történet hősének így óriásokkal, szörnyekkel kell
+megvívni, hogy elérje a kitűzött célt, melyet a kaland elején kap.
+
+Ám sajnos a kalandot el is lehet bukni. Vannak olyan helyek, ahol
+csapdába eshetünk, vagy egy gonosz lény felül kerekedik rajtunk, és
+nem tudjuk legyőzni. Ahhoz, hogy sikeresen végigjátszuk szükségünk van
+ügyességre, szerencsére és életerőre. Ez a három dolog, ami jellemez
+egy hőst.
+
+Mivel a játékos mondja meg, hogy mi legyen a következő lépés, ő
+befolyásolja a további történést, ezért jó ötletnek találtam ezt
+megvalósítani egy programozási nyelven. Minden oldal elején a történet
+folytatódik és az oldal végeztével a játékos megmondhatja, hogy
+melyik kínálkozó utat választja. Így folyamatos interakcióra van
+szükség a játékos részéről. Miután eldöntötte, hogy merre folytatja
+kalandját, átmegyünk arra az oldalra, ahol további kalandok, veszélyek
+leselkednek rá.
+
+A játékoz szükség volt egy papírlapra, melyen a játékos vezette, hogy
+mennyi aktuálisan az életereje, szerencséje, ügyessége. Illetve, ha
+talált egy tárgyat, amit fel lehet venni, azt is felírta, hogy
+használni tudja később, amikor szükség van rá. Emellett két dobókocka
+is kellett, mert a szörnyek elleni harcnál a véletlen dönt, hogy ki
+sebez kit. A nagyprogramom végigjátszásánál nincs szükség ezekre a
+kellékekre, mert a program állapota tárolja, hogy milyen eszközöket vettünk
+fel, mennyi az életerő, szerencse és ügyességi pontjaink, mennyit
+dobtunk a dobokockával, stb.
+
+Felhasználói dokumentáció:
+
+Játékszabály:
+
+Ügyesség, életerő, szerencse pontok:
+Mielőtt elkezdünk egy játékot meg kell határoznunk a fent említett
+életerő, szerencse és ügyességi pontjainkat. Ahhoz, hogy megkapjuk az
+ügyességi pontainkat dobjunk a dobókockával, majd a kapott számhoz
+adjunk hozzá 6-ot. Ugyanígy járjunk el a szerencsepontjaink
+meghatározásához is. Hogy életerő pontjainkat megtudjuk dobjunk két
+dobókockával és adjunk hozzá 12-t. Ezek az értékek a kalandok során
+folyamatosan változni fognak, de nem csökkenhetnek 0 alá, és pont
+visszaszerzés során nem mehetnek a kezdeti érték fölé. Az ügyességi
+pontok mutatják, hogy mennyire tudunk jól harcolni, mennyire vagyunk
+tapasztaltak. Az életerő pont azt jelzi, mennyire vagyunk
+egészségesek, erősek. A szerencse, pedig természetesen a szerencsénket
+jelzi.
+
+Csata:
+Sűrűn találkozhatunk kalandunk során olyan oldallal, ahol meg kell
+küzdenünk egy különleges teremtménnyel, mesebeli szörnnyel. A szörny is
+rendelkezik hasonló tulajdonságokkal, mint mi, vagyis neki is van
+ügyességi és életerő pontja, viszont nincs szerencse pontja.
+Amikor elérkezünk a csatához, akkor körökre bontva támadunk. Vagy a
+lény támad minket, vagy mi a lényt. Ennek eldöntésére használjuk a
+dobókockát, hogy véletlenszerű legyen. Ezeket a köröket addig
+csináljuk, amíg valakinek az életereje le nem csökken 0-ra. Ha a
+szörny életereje lemegy 0-ra, akkor mi győztünk, ellenkező esetben
+vesztettünk és újból kell kezdenünk az egész kalandunkat, nem csak a
+harcot. Egy kör az alábbi módon néz ki:
+1. Dobjunk két kockával a szörny nevében, és két kockadobás összegét adjuk
+hozzá a szörny ügyességi pontjaihoz. Ez lesz az ő támadóereje ebben a körben.
+2. Dobjunk két kockával a saját nevünkben és hasonlóan, mint az előbb,
+ezt az összeget adjuk hozzá a mi ügyességi pontjainkhoz. Ez a saját
+támadóerőnk.
+3. Ekkor össze kell hasonlítani a kapott két számot.
+  - Abban az esetben ha megegyeznek, akkor kivédtük egymás
+  támadását. Nem sérült senki, nem kerekedett felül senki. Kezdhetjük
+  elölről a kört. Minden marad ugyanúgy.
+  - Ha a mi támadóerőnk a nagyobb, akkor mi sebeztük a szörnyet. Így a
+  szörny életerejéből levonunk 2-t.
+  - Ha az ő támadóereje a nagyobb, akkor sebzést kaptunk, így a mi
+  életerőnk csökken 2-vel.
+  - Viszont ezek után még lehetőségünk van javítani az
+  eredményen. Próbára tehetjük a szerencsénket, ami azt jelenti, hogy
+  ismét dobnunk kell mindkét dobókockával. Ha a kapott számok összege
+  kisebb vagy egyenlő, mint a jelenlegi szerencsepontjaink száma,
+  akkor vagyunk szerencsések, ellenkező esetben balszerencsések.
+    - Ha mi sebeztünk és szerencsénk volt, az azt jelenti, hogy további sebzést
+      tudtunk bevinni a szörnynek, így még 2 pontot levonhatunk tőle.
+    - Ha mi sebződtünk és szerencsétlenek voltunk, akkor a szörnynek sikerült
+      még egy csapást bevinni, ezért mi még 2 életerő pontot vesztünk.
+    - Ha mi sebeztünk, de szerencsétlenül jártunk, akkor egy pontot
+      visszakap az ellenfél.
+    - Ha sebzést kaptunk és szerencsétlenek voltunk, akkor még egy
+      pontot elveszítünk.
+    Minden esetben, amikor igénybe vesszük a
+    szerencsénket, akkor a szerencsepontjaink száma egyel csökken.
+4. A kör végén ellenőriznünk kell, hogy nem csökkent-e le a mi vagy az
+   ellenfelünk életerő pontja. Abban az esetben ha igen, akkor vagy
+   legyőztük a szörnyet, és folytathatjuk tovább kalandunkat, vagy ha
+   az ellenfél győzőtt le minket, akkor elölről kell kezdeni az egész
+   kalandot az első oldaltól.
+
+Szerencse:
+Nemcsak csatában találkozhatunk azzal a kifejezéssel, hogy
+Tedd próbára a szerencsédet! Ekkor nem mi döntünk sorsunk
+alakulásáról, hanem a szerencse befolyásolja kalandunk további
+menetét. Hasonlóan, mint a csatában dobnunk kell a két kockával
+egyszerre. Ha az összegük kevesebb vagy egyenlő, mint a szerencse
+pontjaink száma, akkor szerencsések vagyunk. Ha azonban nagyobb, akkor
+szerencsétlenek vagyunk. Ennek fényében kell tovább folytatni a
+kalandunkat. Minden szerencsepróba után a szerencse pontjaink száma
+egyel csökken.
+
+Játék menete:
+A kaland az 1. oldalon kezdődik és minden oldal végén választani kell,
+hogy merre szeretnénk tovább haladni. Van, hogy csak 2 út áll
+előttünk, de van, hogy sok lehetőség közül választhatunk. Cél, hogy
+eljussunk a 400. oldalra(ahol a győzelem vár ránk), melynek eléréséhez
+különböző megmérettetések, harcok, próbák, észjátékok várnak ránk.
+Először kocka dobásokkal meghatározzuk a tulajdonságainkat, majd
+elolvashatjuk a háttértörténetet, amelyből kiderül, hogy a hősnek,
+akinek kalandjait mi választjuk meg, mi a célja. Honnan indul és
+hová akar érkezni.
+
+
+Fejlesztői dokumentáció:
+
+A nagyprogramot Haskell nyelven implementáltam. Alapvetően két részből
+áll maga a program, egy motorból és a megjelenítésből. A program bemenete
+egy xml fájl. A motor beolvassa ezt a fájlt, átfordítja egy saját
+nyelvre, ott elvégzi a műveleteket, állapotváltozásokat, majd előállít
+egy kimenetet. Ezt a kimenetet bárhogy fel lehet dolgozni, én két féle
+feldolgozást implementáltam. Az egyik egy grafikus felhasználói felület, a másik
+egy webes megvalósítás. Ebből látszik, hogy teljesen elkülönül
+egymástól a motor és a megjelenítés.
+
+  Dokumentáció a történetíráshoz:
+  Mivel a program egy xml fájlt olvas be, ezért ott kell leírni, hogy
+  a könyv különböző sorai milyen műveleteket takarnak. Maga az olvasó
+  is találhat ki történeteket. Ehhez az xml szerkezetének ismerete szükséges. 
+
+  <book> : gyökér jelölő.
+  <page id="400" win="1"> : A könyv oldalakból tevődik össze. Minden új oldal egy ilyen
+  jelölőbe kerül. Attribútumai: id, death, win.
+  Az id attribútum minden <page> jelölőben szerepel, ez mondja meg, hogy hányadik
+  oldalon vagyunk. A death attribútum azt az információt hordozza magában,
+  hogy az oldal, amire érkeztünk olyan oldal, ahonnan nincs tovább,vagyis a
+  hős kalandja itt véget ér, elbukta küldetését. Hasonlóan a win
+  attribútum jelentése, hogy a hős elérkezett céljához, vagyis győzött.
+  A <page> </page> közé további jelölők jönnek.
+  <p> : bekezdést jelöl. A nyitó és záró jelölő közé főként szöveg kerül, és
+  további jelölők.
+  <goto ref="2"/> : Ez a jelölő általában minden oldal alján szerepel.
+  Ez jelenti, hogy az adott oldal végén hová tudunk
+  továbbmenni. Attribútuma: ref. Itt mondjuk meg, hogy hol
+  folytathatjuk kalandunkat az oldal befejeztével. Ennek a jelölőnek a
+  hatása, hogy az oldalra kikerül a "lapozz a 2. oldalra" szöveg.
+  <Goto ref="2"/> : Hasonló az előzőhöz. A különbség köztük, hogy míg
+  az előző jelölőt egy mondat közepén vagy végén használjuk, addig ez egy új mondatot
+  állít elő a kimenetben. "Lapozz a 2. oldalra."
+  <text> </text>: Szöveg kiiratása. Nem új bekezdésben folytatódik a
+  szöveg, hanem az adott sorban.
+  <goto-lucky refYes="135" refNo="273"/> : Ez a jelölő jelenti, hogy tedd
+  próbára a szerencsédet. Attribútumai: refYes, refNo. Két
+  kockadobásra van szükségünk. Amennyiben a kockadobások szerencsét
+  hoztak nekünk, akkor a refYes attribútum által tárolt oldalra
+  megyünk, ellenkező esetben a refNo attribútum mondja meg, hogy
+  kalandunk merre folytatódjon.
+  <dice name="d"/> : Kockadobást jelenti. Attribútuma: name. A kocka
+  nevét jelöli, mert esetenként több kockadobásra is szükségünk
+  van. Tehát meg kell tudnunk különböztetni őket.
+  <var ref="d"/> : Változóhivatkozás. A d változó értékét adja
+  vissza.
+  <intlit value="5"/> : Számliterál. A value attribútumban kapott szám
+  az értéke.
+  <lt> </lt> : <. (Kisebb.) Binér reláció, tehát két argumentuma van. Igaz értékkel tér vissza, ha az
+  első argumentum kisebb, mint a második. Az argumentumai lehetnek
+  változóhivatkozások, számliterálok.
+  <le> </le> : <=. (Kisebb vagy egyenlő.) Binér reláció. Igaz az
+  értéke, ha az első argumentum kisebb vagy egyenlő, mint a második.
+  <gt> </gt> : >. (Nagyobb.) Binér reláció. Igaz, ha az első
+  argumentum nagyobb, mint a második.
+  <ge> </gt> : >=. (Nagyobb vagy egyenlő.) Binér reláció. Igaz, ha az
+  első argumentuma nagyobb vagy egyenlő, mint a második.
+  <eq> </eq> : ==. (Egyenlő.) Binér reláció. Igaz, ha a két
+  argumentuma egyenlő.
+  <and> </and> : És. Argumentumai logikai értékek. Igaz értékkel tér
+  vissza, ha minden argumentumának értéke igaz, különben hamis értekkel.
+  <or> </or> : Vagy. Argumentumai logikai értékek. Igaz értékkel tér
+  vissza, ha van olyan argumentuma, amelynek értéke igaz. Különben hamissal.
+  <not> </not> : Nem. Egy argumentuma van, mely egy logikai
+  érték. Igazhoz hamisat, hamishoz igazat rendel.
+  
+  
+  <if> </if> : Elágazás. Van egy feltétele, melynek teljesülése esetén
+  az igaz ágra kerül a vezérlés, különben a hamis ágra. Lehetséges az
+  is, hogy nincs hamis ág. Ebben az esetben, ha a feltétel nem
+  teljesül, akkor a következő jelölővel folytatódik a történet.
+  <le>
+ 
+  <cond> </cond>
+  <take item="item"/>
+  <drop item="item/>
+  <inc counter="item"/>
+  <dec counter="item/> (?)
+  <set-flag flag="cipo"/>
+  <heal stat="health"> <intlit value="1"></heal>
+  <damage stat="healt"> </damage>
+  <counter name="item"/>
+  <carry item="item"/>
+  <plus> </plus>
+  <score stat="agility"/>
+  <fight>
+    <enemy agility="10" health="8">Csontördög</enemy>
+    </fight>            
+
+tag-jelolo
+book-root tag
