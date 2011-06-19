@@ -43,7 +43,7 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 
 
-Executable cyoa
+Executable cyoa-gtk
   hs-source-dirs: src
   Main-is: Cyoa/GUI/GUI.hs
   Build-depends: base == 4.*,
@@ -54,5 +54,23 @@ Executable cyoa
                  mtl,
                  bytestring,
                  hexpat
+
+  Other-modules: Cyoa.Engine, Cyoa.Parser, Cyoa.NormalizeXML
+  
+Executable cyoa-yesod
+  hs-source-dirs: src
+  Main-is: Cyoa/Web/Web.hs
+  Build-depends: base == 4.*,
+                 random,
+                 array,
+                 containers,
+                 mtl,
+                 bytestring,
+                 hexpat,
+                 yesod == 0.8.*,
+                 hamlet,
+                 blaze-html,
+                 text,
+                 web-routes-quasi
 
   Other-modules: Cyoa.Engine, Cyoa.Parser, Cyoa.NormalizeXML
