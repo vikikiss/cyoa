@@ -265,3 +265,18 @@ egymástól a motor és a megjelenítés.
   akivel harcolnunk kell. Az attribútumai megadják a lény ügyességét
   és ételerejét. A jelölők közti szöveg, pedig a nevét.
 
+
+
+----------------------------------------------------------------------------------------
+Motor:
+  type Item = String
+  Az eszközök, tárgyak, melyeket felveszünk a kaland során,
+  karaktersorozatként vannak reprezentálva.
+
+  type Flag = String
+  Amikor megjegyzünk valamit, hogy láttunk valamit, vagy jártunk
+  valamerre, akkor ezeket a kulcsszavakat szintén karaktersorozatként
+  ábrázoltam.
+
+  type Counter = String
+  Vannak olyan t
