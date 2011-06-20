@@ -44,8 +44,11 @@ evalPage = do
   case fightState of
     Nothing -> do
       pageNum <- gets $ player_page . player_state
-      (Page _ pageType is) <- asks $ (!pageNum) . fst
+      (Page _ image pageType is) <- asks $ (!pageNum) . fst
       tell $ OutputClear (show pageNum ++ ".") []
+      case image of
+        Just image -> emit [OutImage image]
+        Nothing -> return ()
       evalPageItems is
       case pageType of
         WinPage -> throwError WinEvent
