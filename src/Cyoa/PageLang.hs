@@ -4,6 +4,7 @@ type Item = String
 type Flag = String
 type Counter = String
 type Die = String -- Dobokocka
+type ImageId = String
 
 data Stat = Health -- Eletero
           | Agility -- Ugyesseg
@@ -40,10 +41,10 @@ data PageType = NormalPage
               | WinPage
               | DeathPage
               deriving (Show, Read)
-                   
-data Page = Page PageNum PageType [PageItem]
+
+data Page = Page PageNum (Maybe ImageId) PageType [PageItem]
           deriving Show
-                   
+
 data PageItem = Paragraph [PageItem]
               | TextLit String
               | If Cond [PageItem] [PageItem]

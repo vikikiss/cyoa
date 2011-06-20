@@ -43,6 +43,7 @@ data OutputItem = OutText (Maybe OutputAttr) String
                 | OutLink Link String
                 | OutEnemies [Enemy]
                 | OutBreak
+                | OutImage ImageId
 
 outText = OutText Nothing
 
