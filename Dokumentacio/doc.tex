@@ -11,6 +11,7 @@
 \usepackage{minted}
 \usemintedstyle{vs}
 \usepackage{graphicx}
+\usepackage[colorlinks=true,urlcolor=blue,citecolor=black,linkcolor=black]{hyperref}
 % \usepackage[usenames,dvipsnames]{color}
 
 \definecolor{Tag}{RGB}{38,107,189}
@@ -38,6 +39,8 @@
 \newcommand{\chap}[1]{
   \addcontentsline{toc}{chapter}{#1}
   \addtocounter{chapter}{1}
+  \setcounter{section}{0}
+  \phantomsection
   \chapter*{#1}
 }
 
