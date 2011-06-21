@@ -588,7 +588,7 @@ elkülönül egymástól a motor és a megjelenítés.
     lénnyel kell megküzdenünk, de lehet az is, hogy többel. Ezért
     itt el kell tárolnunk az összes ilyen mesebeli
     szörnyet, akik arra várnak, hogy megtámadhassanak. A szabályok
-    szerint egyszerre csak lénnyel kell megküzdenünk, tehát egymás
+    szerint egyszerre csak egy lénnyel kell megküzdenünk, tehát egymás
     után következnek. A szörnyek tárolása a fight\_enemies listában történik.
 
     Az implementáció miatt volt szükség feljegyeznem,
@@ -718,8 +718,8 @@ modifyCounter f counter = do
     állapota úgy, hogy fel kell jegyeznünk, hogy még egy ilyen
     gyűjtött tárgyat találtunk. A modifyCounter vátoztatja meg az
     állatpotot. A paraméterül kapott Int -> Int függvény mondja meg,
-    hogy mennyit találtunk, ennyivel lesz több a tarsolyunkban. A
-    getCounter pedig lekérdezi az állapotból.
+    hogy mennyi az új érték a régi függvényében, ezután ennyi darab
+    lesz a tarsolyunkban. A getCounter pedig lekérdezi az állapotból.
 
     \begin{minted}{haskell}
 getStat :: (Monad m) => Stat -> CyoaT m Int
