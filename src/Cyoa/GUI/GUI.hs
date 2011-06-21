@@ -25,6 +25,7 @@ import System.IO.Unsafe
 
 data GUICtxt = GUICtxt { gui_buf :: TextBuffer
                        , gui_view :: TextView
+                       , gui_image :: Image
                        , gui_stat_labels :: Map Stat Label
                        }
 
@@ -145,9 +146,8 @@ main = do
   widgetSetSizeRequest tview 400 600
 
   hbox <- hBoxNew False 0
-  image <- imageNewFromFile =<< getDataFileName "Hero42.jpg"
+  image <- imageNew
   containerAdd hbox image
-
 
   scrollwin <- scrolledWindowNew Nothing Nothing
   scrolledWindowSetPolicy scrollwin PolicyNever PolicyAutomatic
@@ -183,7 +183,7 @@ main = do
   -- (_, s, output) <- stepCyoa `flip` pages `flip` s0 $ do
   --                     evalPage
   writeIORef refState s0
-  runReaderT `flip` (GUICtxt buf tview stat_labels) $ do
+  runReaderT `flip` (GUICtxt buf tview image stat_labels) $ do
     render output0
   mainGUI
 
@@ -192,7 +192,7 @@ render (OutputClear title outItems) = do
   lift $ writeIORef refLinkCount 0
   lift $ textBufferSetText buf ""
   insertHeader title
-  render (OutputContinue outItems)
+  render $ OutputContinue $ OutImage "Hero4":outItems
 render (OutputContinue outItems) = do
   lift $ modifyIORef refLinkCount succ
 
@@ -206,6 +206,11 @@ render (OutputContinue outItems) = do
   display outItems
     where
       display (OutBreak:os) = insertTextToBuf "\n" >> display os
+      display (OutImage img:os) = do
+        image <- asks gui_image
+        path <- lift $ getDataFileName $ img ++ ".jpg"
+        lift $ imageSetFromFile image path
+        display os
       display ((OutEnemies enemies):os) = do
         forM_ enemies $ \(Enemy name agility health) -> do
           display [ OutText Nothing $ unwords [name, "\t"
