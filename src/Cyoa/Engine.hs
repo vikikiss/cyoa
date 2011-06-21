@@ -202,7 +202,7 @@ evalPageItem (Fight enemies) = do
                 fight_last_round = Nothing,
                 fight_cont = is }
   modify $ \gs -> gs{ fight_state = Just fs }
-  emit [OutLink StartFightLink "Harcolj!"]
+  emit [OutLink StartFightLink "Harcolj!", OutBreak]
   throwError FightEvent
 
 goto :: (MonadIO m) => Link -> CyoaT m ()
