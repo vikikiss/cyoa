@@ -533,7 +533,7 @@ elkülönül egymástól a motor és a megjelenítés.
     kérdezni az eredményét, mert ez befolyásolja kalandunk további
     kimenetét az adott oldalon.
     
-    A játékos állapota: kaland írásánál, kitalálásánál, hogy a
+    A játékos állapota: Kaland írásánál, kitalálásánál, hogy a
     történet minél színesebb, fordulatosabb legyen, sok információt
     kell eltárolnunk. Ilyen információ, hogy milyen eszközöket viszünk
     magunkkal kezdetben, vagy miket találtunk eddig az út során.  Ezt
@@ -575,20 +575,203 @@ elkülönül egymástól a motor és a megjelenítés.
     data PlayerState = PS { player\_carries :: Set Item
                           , player\_flags :: Set Flag
                           , player\_counters :: Map Counter Int
-                          , player\_stats :: Map Stat (Int, Int) -- (current, initial)
+                          , player\_stats :: Map Stat (Int, Int)
                           , player\_page :: PageNum
                           }
                      deriving (Show, Read)
     \end{minted}
 
-    A háttérben lévő CyoaT monád egy monádtranszformátor, melynek külseje
+    Harc/csata állapota: Egy csata folyamán előfordulhat, hogy csak egy
+    lénnyel kell megküzdenünk, de lehet az is, hogy többel. Ezért
+    itt el kell tárolnunk az összes ilyen mesebeli
+    szörnyet, akik arra várnak, hogy megtámadhassanak. A szabályok
+    szerint egyszerre csak lénnyel kell megküzdenünk, tehát egymás
+    után következnek. A szörnyek tárolása a fight\_enemies listában történik.
+
+    Az implementáció miatt volt szükség feljegyeznem,
+    hogy mi volt az előző forduló, ezt a fight\_last\_round teszi
+    meg.
+
+    A könyv formája olyan, hogy az oldal elején leírja a
+    történetet, itt találkozunk egy (vagy több) ellenféllel, majd az
+    oldal alján van a megjegyzés, hogy ha győztes kimenetelű
+    számunkra csata, akkor merre menjünk, ellenkező esetben vége a
+    játékunknak. A programom írásánál úgy gondoltam, hogy nem
+    szeretném, ha a kimenetben rögtön megjelenne, hogy merre van a
+    továbbvezető út, mert ekkor még nem releváns számunkra. Úgy
+    gondoltam, hogy akkor szeretném ezt megjeleníteni, ha már
+    legyőztük ellenségeinket, különben egyáltalan ne jelenjen
+    meg. Így a fight\_cont nevű mezőben tárolom a csata utáni
+    folytatást, ami az oldal folyatását reprezentálja.
+    \begin{minted}{haskell}
+    data FightState = FS { fight\_enemies :: [Enemy]
+                         , fight\_last\_round :: Maybe FightRound
+                         , fight\_cont :: [PageItem]
+                         }
+                    deriving (Show, Read)
+    \end{minted}
+    
+    Monádok a háttérben: egy CyoaT nevű monád van a háttérben, mely
+    egy monád-interfészt húz az állapot kezelése fölé. Ez minden olyan
+    műveletet nyújt,
+    amivel meg lehet változtatni az állapotot.
+    Tehát a CyoaT monádom egy monádtranszformátor, melynek külseje
     egy error monád, a belseje pedig egy RWST monádtranszformátor, ami
-    az IO monád fölött van.
-    newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent (RWST (Array PageNum Page, [PageItem]) Output GameState m) a }
-  deriving (Monad, Functor, MonadIO,
+    az IO monád fölött van. A Reader monádban tárolom a magukat az
+    oldalakat, és amikor elérkezünk egy új oldalra, akkor csak le kell
+    kérdezni az aktuálisat. A Writer monádba kerül a kimenet, amely
+    egy további algebrai adattípus. A State monád pedig egy játék
+    állapotot ír le.
+    Az IO monádra a kiírás miatt van szükség.
+    \begin{minted}{haskell}
+    newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent
+      (RWST (Array PageNum Page, [PageItem])
+      Output GameState m) a }
+    deriving (Monad, Functor, MonadIO,
             MonadError GameEvent,
-            MonadState GameState, MonadReader (Array PageNum Page, [PageItem]), MonadWriter Output,
+            MonadState GameState, MonadReader (Array PageNum Page,
+            [PageItem]), MonadWriter Output,
             Applicative)
+    \end{minted}
+
+    A monád műveletei:
+    \begin{minted}{haskell}
+modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
+modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
+    \end{minted}
+    Tehát a modifyPlayerState módosítja a játék állapotát. A
+    paraméterül kapott PlayerState -> PlayerState függvény mondja meg,
+    hogy mi a módosítás.
+    \begin{minted}{haskell}
+modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT m ()
+modifyFightState f = modify $ \gs -> gs{ fight_state = f' (fight_state gs) }
+  where f' = Just . f. fromJust
+      \end{minted}
+    Hasonlóan az előzőhöz a csata állapotát is tudnunk kell
+    módosítani, hogy éppen mi történik. Ki támad kit, kinek sikerült
+    csapást bevinnie.
+
+    \begin{minted}{haskell}
+takeItem :: (Monad m) => Item -> CyoaT m ()
+takeItem item =
+  modifyPlayerState $ \ps -> ps { player_carries = Set.insert item
+    (player_carries ps) }
+    \end{minted}
+    Tágy felvételénél a játékos állapotában tároljuk, hogy eddig mikre
+    tett szert. Ha egy új tárgyat talál, akkor azt
+    megjegyezzük, módosítva az állapotunkat azzal, hogy egy új elem
+    bekerült a halmazunkba.
+
+    \begin{minted}{haskell}
+dropItem :: (Monad m) => Item -> CyoaT m ()
+dropItem item =
+  modifyPlayerState $ \ps -> ps { player_carries = Set.delete item
+    (player_carries ps) }
+    \end{minted}
+    Akkor is a játékos állapota változik, ha eldob vagy felhasznál egy tárgyat.
+
+    \begin{minted}{haskell}
+carries :: (Monad m) => Item -> CyoaT m Bool
+carries item =
+  gets $ Set.member item . player_carries . player_state
+    \end{minted}
+    Szükségünk lehet lekédezni, hogy egy adott elemmel
+    rendelkezünk-e. Ennek segítségére van ez a carries függvény.
+
+    \begin{minted}{haskell}
+flagSet :: (Monad m) => Flag -> CyoaT m Bool
+flagSet flag = gets $ Set.member flag . player_flags . player_state
+
+setFlag :: (Monad m) => Flag -> CyoaT m ()
+setFlag flag =
+  modifyPlayerState $ \ps -> ps { player_flags = Set.insert flag
+    (player_flags ps) }
+
+resetFlag :: (Monad m) => Flag -> CyoaT m ()
+resetFlag flag =
+  modifyPlayerState $ \ps -> ps { player_flags = Set.delete flag
+    (player_flags ps) }
+    \end{minted}
+    Egy különleges helyzet megjegyzésére szolgál. (Amely nem egy
+    tárgyfelvétel hanem, hogy például jártunk-e egy adott helyen vagy
+    megettünk-e egy ételt, amit kalandunk közben találtunk.) Ezt az
+    információt meg tudjuk jegyezni, le tudjuk kérdezni és lehet, hogy
+    egy olyan információról van szó, melyet fel tudunk használni. Ezen
+    információk leírására van.
+
+    \begin{minted}{haskell}
+getCounter :: (Monad m) => Counter -> CyoaT m Int
+getCounter counter = do
+  lookup <- gets $ Map.lookup counter . player_counters . player_state
+  return $ 0 `fromMaybe` lookup
+
+modifyCounter :: (Monad m) => (Int -> Int) -> Counter -> CyoaT m ()
+modifyCounter f counter = do
+  modifyPlayerState $ \ps -> ps { player_counters = Map.alter f' counter (player_counters ps) }
+  where f' mx = Just $ f $ 0 `fromMaybe` mx
+    \end{minted}
+    Ebben a könyben, melyet feldolgoztam gyűrűket kell
+    gyűjteni. Amikor találunk egy újabbat, akkor változik a játékos
+    állapota úgy, hogy fel kell jegyeznünk, hogy még egy ilyen
+    gyűjtött tárgyat találtunk. A modifyCounter vátoztatja meg az
+    állatpotot. A paraméterül kapott Int -> Int függvény mondja meg,
+    hogy mennyit találtunk, ennyivel lesz több a tarsolyunkban. A
+    getCounter pedig lekérdezi az állapotból.
+
+    \begin{minted}{haskell}
+getStat :: (Monad m) => Stat -> CyoaT m Int
+getStat a = gets $ fst . fromJust . Map.lookup a . player_stats
+. player_state
+    \end{minted}
+    A getStat függvénnyel a paraméterül kapott jellemzőt (életerő,
+    ügyesség, szerencse) kérdezhetjük le.
+
+    \begin{minted}{haskell}
+modifyStat :: (Monad m) => (Int -> Int) -> Stat -> CyoaT m ()
+modifyStat f stat = do
+  modifyPlayerState $ \ps -> ps { player_stats = Map.alter (Just . f'
+    . fromJust) stat (player_stats ps) }
+  when (stat == Health) $ do
+    health <- getStat Health
+    when (health == 0) $ do
+      emit [outText "Életerő pontjaid elfogytak, kalandod itt véget ér."]
+      die
+
+  where f' (current, initial) = (new, initial)
+          where new = clamp (0, initial) (f current)
+        clamp (low, high) x | x < low = low
+                            | x > high = high
+                            | otherwise = x
+    \end{minted}
+    Hasonló, mint az előbb, ez is a játékos jellemzőivel
+    foglalkozik. Míg ott lekérdeztük, itt módosítjuk a jellemzőket. A
+    kaland során találkozhatunk olyannal, hogy megsérülünk, ekkor az
+    életerőnk csökken. Ennek módosítása ezzel a függvénnyel
+    történik. A játékszabályokban az is benne van, hogy ezek a pontok
+    nem csökkenhetnek 0 alá. Ilyen esetben a kimenetbe elküldjük, hogy
+    ,,Életerő pontjaid elfogytak, kalandod itt véget ér.'' Azonban a
+    kezdeti érték fölé sem mehetnek gyógyulás alkalmával. Erre is fel
+    van készítve ez a függvény.
+
+    \begin{minted}{haskell}
+getDice :: (Monad m) => Die -> CyoaT m Int
+getDice d = gets (fromJust . Map.lookup d . page_state)
+
+addDice :: (Monad m) => Die -> Int -> CyoaT m ()
+addDice d value = modify $ \gs -> gs{ page_state = Map.insert d value (page_state gs) }
+
+clearDice :: (Monad m) => CyoaT m ()
+clearDice = modify $ \gs -> gs{ page_state = Map.empty }
+
+die :: (Monad m) => CyoaT m ()
+die = do
+  throwError DeathEvent
+  \end{minted}
+
+    Ezek a függvények a kockadobás miatti állapotváltozásokat,
+    állapotlekérdezéseket kezelik. A getDice művelettel egy konkrét
+    kockának az értékét kérdezzük le. Az addDice egy új kockát
+    definiál egy konkrét étrékkel. A clearDice kitörli az eddigi kockadobásokat.
 
     \subsection{Megjelenítés}
 \end{document}
