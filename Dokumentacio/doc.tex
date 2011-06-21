@@ -7,11 +7,19 @@
 \usepackage{amssymb}
 \usepackage{paralist}
 \usepackage{graphicx}
+\usepackage{listings}
+\lstset{language=XML, morekeywords={page, goto, dice, if, le, plus, var,
+    score, text, ref, stat, goto, p, fight, enemy, agility,
+    health, damage, heal, value, intlit, id},
+  backgroundcolor=\color{CodeBg}, frame=single}
 \usepackage[usenames,dvipsnames]{color}
 
 \definecolor{Tag}{named}{NavyBlue}
 \definecolor{Attr}{RGB}{238,0,0}
 \definecolor{Value}{named}{OliveGreen}
+\definecolor{CodeBg}{RGB}{232,232,232}
+\definecolor{Keyword}{RGB}{180,82,205}
+\definecolor{Cons}{RGB}{0,139,0}
 
 \newcommand{\stat}{\textsc}
 \newcommand{\attr}{\emph}
@@ -35,8 +43,8 @@
   szerepelnek, tehát nem az előre megírt kalandot, történetet olvassa el
   az olvasó, helyette sok apró fejezetre van bontva a cselekmény, melyek
   végén választási lehetőség áll. Így az olvasóra van bízva, hogy hogyan
-  folytatja tovább a történetet. Vagyis az olvasó lett maga a kalandor,
-  aki kedve szerint formálhatta a történéseket attól függően, hogy
+  folytatja tovább a történetet. Vagyis az olvasó lehet maga a kalandor,
+  aki kedve szerint formálhatja a történéseket attól függően, hogy
   mennyire bátor, kíváncsi, leleményes és kalandvágyó. Ezek a kalandok
   nagyrészt nem valós történeteket foglalnak magukba, hanem a fantázia
   világában játszódnak, meseszerű fordulatokkal, mesebeli lényekkel. Az
@@ -55,17 +63,17 @@
   folytatódik és az oldal végeztével a játékos megmondhatja, hogy
   melyik kínálkozó utat választja. Így folyamatos interakcióra van
   szükség a játékos részéről. Miután eldöntötte, hogy merre folytatja
-  kalandját, átmegyünk arra az oldalra, ahol további kalandok, veszélyek
+  kalandját, átmegy arra az oldalra, ahol további kalandok, veszélyek
   leselkednek rá.
   
   Az eredeti játék az volt, hogy a könyvet olvasva a játékos
   kigyűtötte magának az információkat, amelyet kalandja során
-  tapasztalt így, szükség volt egy papírlapra, melyen vezette, hogy
+  tapasztalt, így szükség volt egy papírlapra, melyen vezette, hogy
   mennyi aktuálisan az \stat{életereje}, \stat{szerencséje},
   \stat{ügyessége}. Illetve, ha talált egy tárgyat, amit fel lehet
   venni, azt is felírta, hogy használni tudja később, amikor szükség
   van rá. Emellett két dobókocka is kellett, mert a szörnyek elleni
-  harcnál a véletlen dönt, hogy ki sebez kit. A nagyprogramom
+  harcnál a véletlen dönt, hogy ki sebez kit. Azonban a nagyprogramom
   végigjátszásánál nincs szükség ezekre a kellékekre, mert a program
   állapota tárolja, hogy milyen eszközöket vettünk fel, mennyi az
   \stat{életerő}, \stat{szerencse} és \stat{ügyességi pontjaink},
@@ -138,7 +146,7 @@
                 \end{compactitem} 
             \end{itemize}
             Minden esetben, amikor igénybe vesszük a
-            szerencsénket, akkor a szerencsepontjaink száma egyel csökken.
+            szerencsénket, akkor a szerencsepontjaink száma eggyel csökken.
           \item A kör végén ellenőriznünk kell, hogy nem csökkent-e le a mi vagy az
             ellenfelünk \stat{életerő pontja} 0-ra. Abban az esetben ha igen, akkor vagy
             legyőztük a szörnyet, és folytathatjuk tovább kalandunkat, vagy ha
@@ -146,16 +154,18 @@
             kalandot az első oldaltól.
         \end{enumerate} 
       \subsection{Szerencse}
-        Nemcsak csatában találkozhatunk azzal a kifejezéssel, hogy
-        \emph{Tedd próbára a szerencsédet!}. Ekkor nem mi döntünk
-        sorsunk alakulásáról, hanem a szerencse befolyásolja kalandunk
-        további menetét. Hasonlóan, mint a csatában dobnunk kell a két
-        kockával egyszerre. Ha az összegük kevesebb vagy egyenlő, mint
-        a \stat{szerencse pontjaink} száma, akkor szerencsések
-        vagyunk. Ha azonban nagyobb, akkor szerencsétlenek
-        vagyunk. Ennek fényében kell tovább folytatni a
-        kalandunkat. Minden szerencsepróba után a szerencse pontjaink
-        száma egyel csökken.
+        Nemcsak csatában szorítkozhatunk a szerencsénkre, hanem
+        találkozhatunk azzal az utasítással, hogy \emph{Tedd próbára a
+          szerencsédet!}. Alapvető különbség, hogy míg a csatában mi
+        dönthetjük, hogy szeretnénk-e kockáztatni, addig itt
+        kötelező. Ekkor nem mi döntünk sorsunk alakulásáról, hanem a
+        szerencse befolyásolja kalandunk további menetét. Hasonlóan,
+        mint a csatában dobnunk kell a két kockával egyszerre. Ha az
+        összegük kevesebb vagy egyenlő, mint a \stat{szerencse
+          pontjaink} száma, akkor szerencsések vagyunk. Ha azonban
+        nagyobb, akkor szerencsétlenek vagyunk. Ennek fényében kell
+        tovább folytatni a kalandunkat. Minden szerencsepróba után a
+        szerencse pontjaink száma eggyel csökken.
     
       \section{Játék menete}
         A kaland az 1. oldalon kezdődik és minden oldal végén választani kell,
@@ -163,9 +173,9 @@
         előttünk, de van, hogy sok lehetőség közül választhatunk. Cél, hogy
         eljussunk a 400. oldalra (ahol a győzelem vár ránk), melynek eléréséhez
         különböző megmérettetések, harcok, próbák, észjátékok várnak ránk.
-        Először kocka dobásokkal meghatározzuk a tulajdonságainkat, majd
+        Először kockadobásokkal meghatározzuk a tulajdonságainkat, majd
         elolvashatjuk a háttértörténetet, amelyből kiderül, hogy a hősnek,
-        akinek kalandjait mi választjuk meg, mi a célja. Honnan indul és
+        akinek kalandjait mi választjuk meg, mi a célja, honnan indul és
         hová akar érkezni.
     \section{Program indítása, használata}
       TODO
@@ -186,183 +196,347 @@ elkülönül egymástól a motor és a megjelenítés.
     takarnak. Maga az olvasó is találhat ki történeteket. Ehhez az
     \proglang{xml} szerkezetének ismerete szükséges.
 
+    \subsection{Oldal alapvető leírása}
+      \begin{itemize}
+        \item <{\color{Tag}book}> <{\color{Tag}/book}> : Gyökér jelölő.
+
+        \item <{\color{Tag}page}
+          {\color{Attr}id}={\color{Value}''400''}
+          {\color{Attr}win}={\color{Value}''1''}>
+          <{\color{Tag}/page}>: A könyv oldalakból tevődik
+          össze. Minden új oldal egy ilyen jelölőbe
+          kerül. Attribútumai: \attr{id}, \attr{death}, \attr{win}.
+          Az \attr{id} attribútum kötelező, ez mondja meg, hogy
+          hányadik oldalon vagyunk. A másik két attribútum csak
+          különleges helyzetekben szerepel. A \attr{death} attribútum
+          azt az információt hordozza magában, hogy az oldal, amire
+          érkeztünk olyan oldal, ahonnan nincs tovább vagyis a hős
+          kalandja itt véget ér, elbukta küldetését. Hasonlóan a
+          \attr{win} attribútum jelentése, hogy a hős elérkezett
+          céljához, tehát győzött. A nyitó csukó jelölők közé további
+          jelölők jönnek.
+          
+        \item <{\color{Tag}p}> <{\color{Tag}/p}> : bekezdést jelöl, tehát ennek a
+          segítségével tudjuk a szöveget tagolni, hogy átláthatóbb,
+          olvashatóbb legyen. Így a nyitó és záró jelölő közé főként
+          szöveg kerül, de lehetnek további jelölők is.
+      \end{itemize}
+      
+    \subsection{Események}
+      \begin{itemize}
+        \item <{\color{Tag}dice} {\color{Attr}name}={\color{Value}''d''}/>
+          : Kockadobás. A \attr{name} attribútum a kocka nevét jelöli, mert
+          esetenként több kockadobásra is szükségünk van. Tehát meg kell
+          tudnunk különböztetni őket.
+    
+        \item <{\color{Tag}take}
+          {\color{Attr}item}={\color{Value}''item''}/> : Eszköz
+          felvétele. Kalandunk során számon kell tartanunk, hogy milyen
+          eszközökre tettünk szert. Ezekre leginkább a későbbiekben lesz
+          szükségünk. Elérkezhetünk egy olyan megmérettetéshez, melynek
+          sikeressége az adott tárgy birtoklásán múlhat.
+    
+        \item <{\color{Tag}drop}
+          {\color{Attr}item}={\color{Value}''item''}/> : Tárgy eldobása,
+          felhasználása. Ha felhasználunk egy korábban megszerzett
+          tárgyat, de az már a későbbiekben nem marad nálunk, akkor
+          használjuk ezt a jelölőt.
+    
+        \item <{\color{Tag}set-flag}
+          {\color{Attr}flag}={\color{Value}''flag''}/> : Szükségünk
+          lehet arra is, hogy megjegyezzünk olyan dolgokat, hogy már
+          megtörtént velünk valami, pl. jártunk már egy bizonyos
+          helyen. A későbbiekben lehet erre utaló kérdés, mely
+          befolyásolhatja utunkat.
+          
+        \item <{\color{Tag}heal}
+          {\color{Attr}stat}={\color{Value}''stat}''>
+          <{\color{Tag}intlit} {\color{Attr}value}={\color{Value}''1''}>
+          <{\color{Tag}/heal}> : A stat attribútum által meghatározott
+          jellemzőnk(\stat{életerő}, \stat{ügyesség}, \stat{szerencse})
+          növelése. Annyival nő az értéke, amennyi a nyitó és záró
+          jelölő közötti érték.
+          
+        \item <{\color{Tag}damage}
+          {\color{Attr}stat}={\color{Value}''health''}>
+          <{\color{Tag}intlit} {\color{Attr}value}={\color{Value}''1''}>
+          <{\color{Tag}/damage}> : A stat attribútum által meghatározott
+          jellemzőnk(\stat{életerő}, \stat{ügyesség}, \stat{szerencse})
+          csökkenése. Annyival lesz kevesebb az értéke, amennyi a nyitó
+          es záró jelölő közötti érték.
+    
+        \item <{\color{Tag}inc}
+          {\color{Attr}counter}={\color{Value}''item''}/> : Lehet az a
+          feladatunk a kaland során, hogy egy adott tárgyból össze kell
+          gyűjtenünk többet. Ennek a segítségével tudjuk az adott eszköz
+          számát nyilvántartanunk, tehát ha találunk egy újabbat, akkor
+          csak annyit jegyzünk meg, hogy találtunk még egyet.
+          
+        \item <{\color{Tag}dec}
+          {\color{Attr}counter}={\color{Value}''item''}/> : Hasonlóan az
+          előző jelölőhöz, ez arra szolgál, amikor a gyűjtött dologból
+          elveszítünk vagy felhasználunk egyet.
+      \end{itemize}
+
+    \subsection{Vezélési szerkezetek}
+      \subsubsection{Feltételek}
+        \begin{itemize}
+          \item <{\color{Tag}lt}> <{\color{Tag}/lt}> : <. (Kisebb.) Binér
+            reláció, tehát két argumentuma van. Igaz értékkel tér vissza,
+            ha az első argumentum kisebb, mint a második. Az argumentumai
+            lehetnek változóhivatkozások, számliterálok.
+            
+          \item <{\color{Tag}le}> <{\color{Tag}/le}> : <=. (Kisebb vagy
+            egyenlő.) Binér reláció. Igaz az értéke, ha az első argumentum
+            kisebb vagy egyenlő, mint a második.
+            
+          \item <{\color{Tag}gt}> <{\color{Tag}/gt}> : >. (Nagyobb.) Binér
+            reláció. Igaz, ha az első argumentum nagyobb, mint a második.
+            
+          \item <{\color{Tag}ge}> <{\color{Tag}/gt}> : >=. (Nagyobb vagy
+            egyenlő.) Binér reláció. Igaz, ha az első argumentuma nagyobb
+            vagy egyenlő, mint a második.
+            
+          \item <{\color{Tag}eq}> <{\color{Tag}/eq}> : ==. (Egyenlő.)
+            Binér reláció. Igaz, ha a két argumentuma egyenlő.
+            
+          \item <{\color{Tag}and}> <{\color{Tag}/and}> : És. Argumentumai
+            logikai értékek. Igaz értékkel tér vissza, ha minden
+            argumentumának értéke igaz, különben hamis értekkel.
+            
+          \item <{\color{Tag}or}> <{\color{Tag}/or}> : Vagy. Argumentumai
+            logikai értékek. Igaz értékkel tér vissza, ha van olyan
+            argumentuma, amelynek értéke igaz, különben hamissal.
+            
+          \item <{\color{Tag}not}> <{\color{Tag}/not}> : Negáció. Egy
+            argumentuma van, mely egy logikai érték. Igazhoz hamisat,
+            hamishoz igazat rendel.
+          \item <{\color{Tag}carry}
+            {\color{Attr}item}={\color{Value}''item''}/> : Rendelkezünk-e az
+            adott tárggyal. Amennyiben igen, akkor az értéke igaz,
+            ellenkező esetben hamis.
+            
+          \item <{\color{Tag}score}
+            {\color{Attr}stat}={\color{Value}''stat''}/> : A \attr{stat}
+            attribútumban meghatározott jellemzőnk lekérdezése.
+        \end{itemize}
+
+      \subsubsection{Kifejezések}
+        \begin{itemize}
+          \item <{\color{Tag}cond}> <{\color{Tag}/cond}> : Feltétel. Három
+            argumentuma van. Amennyiben az első argumentum értéke igaz,
+            akkor a második argumentumra kerül a vezérlés, különben a
+            harmadikra.
+          \item <{\color{Tag}var} {\color{Attr}ref}={\color{Value}''d''}/>
+            : Változóhivatkozás. A \emph{d} változó értékét adja
+            vissza. Az előző jelölőnél megadtuk a kockadobás nevét és
+            értékét, mely értékre később szükégünk van, hogy például
+            összehasoníthassuk más értékkel. Ennek a jelölőnek a
+            segítségével tehetjük ezt meg.
+            
+          \item <{\color{Tag}intlit}
+            {\color{Attr}value}={\color{Value}''5''}/> : Számliterál. A
+            \attr{value} attribútumban kapott szám az értéke.
+    
+        \end{itemize}
+
+      \subsubsection{Utasítás}
+        \begin{itemize}
+          \item <{\color{Tag}if}> <{\color{Tag}/if}> : Elágazás. Van egy
+            feltétele, melynek teljesülése esetén az igaz ágra kerül a
+            vezérlés, különben a hamis ágra. Lehetséges az is, hogy nincs
+            hamis ág. Ebben az esetben, ha a feltétel nem teljesül, akkor
+            a következő jelölővel folytatódik a történet.  pl:
+
+          \item <{\color{Tag}text}> <{\color{Tag}/text}>: Szöveg
+            kiiratása. Nem új bekezdésben folytatódik a szöveg, hanem az
+            adott sorban.
+
+          \item <{\color{Tag}plus}> <{\color{Tag}/plus}> : Két argumentuma
+            van, visszaadja ezeknek az attribútumoknak az összegét.
+
+          \item <{\color{Tag}counter}
+            {\color{Attr}name}={\color{Value}''item''}/> : A \attr{name}
+            attribútumban meghatározott tárgy számát adja meg, azaz hogy
+            mennyit sikerült összegyűjtenünk belőle.
+            
+          \item <{\color{Tag}clear}
+            {\color{Attr}counter}={\color{Value}''item''}/> : A gyűjtött
+            tárgyakat elveszítjük, azaz a száma 0 lesz.
+      \end{itemize}
+
+            
+    \subsection{Interakció}
+      \begin{itemize}
+        \item <{\color{Tag}goto}
+          {\color{Attr}ref}={\color{Value}''2''}/> : Az adott oldal
+          befejeztével hová tudunk továbbmenni. A \attr{ref} attribútum
+          mondja meg, hogy hol folytathatjuk kalandunkat. Ennek a
+          jelölőnek a hatása, hogy az oldalra kikerül a \emph{,,lapozz a
+            2. oldalra''} szöveg.
+    
+        \item <{\color{Tag}Goto}
+          {\color{Attr}ref}={\color{Value}''2''}/> : Hasonló az
+          előzőhöz. A különbség köztük, hogy míg az előző jelölőt egy
+          mondat közepén vagy végén használjuk, addig ez egy új mondatot
+          állít elő a kimenetben. \emph{,,Lapozz a 2. oldalra.''}
+    
+        \item <{\color{Tag}goto-lucky}
+          {\color{Attr}refYes}={\color{Value}''135''}
+          {\color{Attr}refNo}={\color{Value}''273''}/> : Tedd próbára a
+          szerencsédet!. Attribútumai: \attr{refYes}, \attr{refNo}. Két
+          kockadobásra van szükségünk. Amennyiben a kockadobások
+          szerencsét hoztak nekünk, akkor a \attr{refYes} attribútum
+          által meghatározott oldalra megyünk, ellenkező esetben a
+          \attr{refNo} attribútum mondja meg, hogy kalandunk merre
+          folytatódjon.
+
+        \item <{\color{Tag}enemy}
+          {\color{Attr}agility}={\color{Value}''10''}
+          {\color{Attr}health}={\color{Value}''8''}> </enemy> : Az
+          ellenfél, akivel harcolnunk kell. Az attribútumai megadják a
+          lény \stat{ügyességét} és \stat{ételerejét}. A jelölők közti
+          szöveg, pedig a nevét.
+
+        \item <{\color{Tag}f{}ight}> <{\color{Tag}/f{}ight}> : Harc egy
+          mesebeli lénnyel. A nyitó és csukó jelölők között egy vagy
+          több <{\color{Tag}enemy}> szerepel, attól függ, hogy hány ellenféllel
+          kell megküzdeni.
+      \end{itemize}
+      
+    \subsection{Példák}
     \begin{itemize}
-      \item <{\color{Tag}book}> : Gyökér jelölő.
+      \item Egyszerű oldal
+        \begin{lstlisting}
+<page id="7">
+  <p>
+    Hamarosan egy ujabb ajtohoz ersz az alagutban.
+    A kilincs enged, de az ajtot keresztben
+    bedeszkaztak.
+    Ha le akarod fesziteni a deszkakat a
+    kardoddal - <goto ref="336"/>.
+    Ha inkabb tovabbmesz az alagutban -
+    <goto ref="45"/>.
+    </p>
+</page>
+      \end{lstlisting}
+      Ez a példa azt mutatja be, hogy hogyan épül fel egy egyszerű
+      oldal. Kívül található a <{\color{Tag}page}> jelölő, amely egy
+      oldalt hivatott leírni. \attr{Id} attribútuma azt jelenti, hogy a
+      7. oldalon vagyunk. Ezen belül <{\color{Tag}p}> jelölőben
+      található a történet szövege. Végül az oldal befejezését jelző
+      <{\color{Tag}goto}>, amelyben a lehetséges folyatásokat írjuk
+      le.
+      \item Kockadobás
+      
+        \begin{lstlisting}
+<p>
+  Dobj ket kockaval!
+  <dice name="d1"/>
+  <dice name="d2"/>
+  <if>
+    <le>
+      <plus>
+        <var ref="d1"/>
+        <var ref="d2"/>
+      </plus>
+      <score stat="agility"/>
+    </le>
+    <text>
+      Ha a kapott osszeg ugyanannyi vagy kevesebb,
+      mint UGYESSEGI pontjaid szama -
+      <goto ref="66"/>.
+    </text>
+    <text>
+      Ha a kapott osszeg nagyobb, mint UGYESSEGI
+      pontjaid szama - <goto ref="334"/>.
+    </text>
+  </if>
+</p>
+        \end{lstlisting}
+        A kaland során lehet, hogy a véletlenre szeretnénk bízni, hogy
+        hősünkkel mi történjen. Ennek megoldására szolgál a
+        kockadobás. Ebben az összetett példában azt írtam le, hogy
+        dobunk két kockával, és amennyiben az összegük kisebb vagy
+        egyenlő, mint a kalandor ügyességi pontja, akkor a 66-os oldalon
+        folytathatja a történetét, különben a 334-en.\\
+        A <{\color{Tag}dice}> jelölő a
+        kockadobást jelenti, ahol a két kockánk a \emph{d1} és \emph{d2}. A névre majd
+        a hivatkozásnál lesz szükségünk. Majd egy <{\color{Tag}if}> elágazás
+        következik, ahol az <{\color{Tag}le}> jelölővel megnézzük, hogy az első
+        argumentum kisebb vagy egyenlő-e, mint a második. Az első
+        argumentum összetett, egy <{\color{Tag}plus}> található benne, melynek
+        jelentése, hogy a két kapott argumetumot összeadjuk. A két
+        argumentum 1-1 változóhivatkozás, azaz az előbb kapott két
+        kockadobás eredménye, melyet a <{\color{Tag}var}> jelölővel kérdezünk
+        le. Utána következik az <{\color{Tag}if}> második argumentuma, amelyben
+        lekérdezzük kalandorunk ügyességi pontjait a <{\color{Tag}score}> jelölő
+        segítségével. Majd következik az <{\color{Tag}if}> igaz és hamis ága, melyben
+        <{\color{Tag}text}> jelölővel szöveget iratunk ki.
+      
+      \item Csata
+      
+        Ebben a példában egy csata leírása látható. A
+        <{\color{Tag}fight}> jelölők közé jönnek az
+        <{\color{Tag}enemy}> jelölők. A <{\color{Tag}fight}> a csatát
+        jelenti. Az <{\color{Tag}enemy}> pedig az ellenfelet. Itt csak egy ellenfél
+        található, de ha több lénnyel kell megküzdenie hősünknek,
+        akkor az <{\color{Tag}enemy}> jelölők száma nő.
+        \begin{lstlisting}
+<fight>
+  <enemy agility="9" health="10">Ogre</enemy>
+</fight>
+        \end{lstlisting}
 
-      \item <{\color{Tag}page} {\color{Attr}id}={\color{Value}''400''}
-        {\color{Attr}win}={\color{Value}''1''}> : A könyv oldalakból
-        tevődik össze. Minden új oldal egy ilyen jelölőbe
-        kerül. Attribútumai: \attr{id}, \attr{death}, \attr{win}.  Az
-        \attr{id} attribútum kötelező, ez mondja meg, hogy hányadik
-        oldalon vagyunk. A másik két attribútum csak különleges
-        helyzetekben szerepel. A \attr{death} attribútum azt az
-        információt hordozza magában, hogy az oldal, amire érkeztünk
-        olyan oldal, ahonnan nincs tovább,vagyis a hős kalandja itt
-        véget ér, elbukta küldetését. Hasonlóan a \attr{win}
-        attribútum jelentése, hogy a hős elérkezett céljához, tehát
-        győzött. A nyitó csukó jelölők közé további jelölők jönnek.
-    
-      \item <{\color{Tag}p}> : bekezdést jelöl, tehát ennek a
-        segítségével tudjuk a szöveget tagolni, hogy átláthatóbb,
-        olvashatóbb legyen. Így a nyitó és záró jelölő közé főként
-        szöveg kerül, de lehetnek további jelölők is.
-        
-      \item <{\color{Tag}goto}
-        {\color{Attr}ref}={\color{Value}''2''}/> : Az adott oldal
-        befejeztével hová tudunk továbbmenni. A \attr{ref} attribútum
-        mondja meg, hogy hol folytathatjuk kalandunkat. Ennek a
-        jelölőnek a hatása, hogy az oldalra kikerül a \emph{,,lapozz a
-          2. oldalra''} szöveg.
-    
-      \item <{\color{Tag}Goto}
-        {\color{Attr}ref}={\color{Value}''2''}/> : Hasonló az
-        előzőhöz. A különbség köztük, hogy míg az előző jelölőt egy
-        mondat közepén vagy végén használjuk, addig ez egy új mondatot
-        állít elő a kimenetben. \emph{,,Lapozz a 2. oldalra.''}
-    
-      \item <{\color{Tag}text}> <{\color{Tag}/text}>: Szöveg
-        kiiratása. Nem új bekezdésben folytatódik a szöveg, hanem az
-        adott sorban.
-    
-      \item <{\color{Tag}goto-lucky}
-        {\color{Attr}refYes}={\color{Value}''135''}
-        {\color{Attr}refNo}={\color{Value}''273''}/> : Tedd próbára a
-        szerencsédet!. Attribútumai: \attr{refYes}, \attr{refNo}. Két
-        kockadobásra van szükségünk. Amennyiben a kockadobások
-        szerencsét hoztak nekünk, akkor a \attr{refYes} attribútum
-        által meghatározott oldalra megyünk, ellenkező esetben a
-        \attr{refNo} attribútum mondja meg, hogy kalandunk merre
-        folytatódjon.
-    
-      \item <{\color{Tag}dice} {\color{Attr}name}={\color{Value}''d''}/>
-        : Kockadobást. A name attribútum a kocka nevét jelöli, mert
-        esetenként több kockadobásra is szükségünk van. Tehát meg kell
-        tudnunk különböztetni őket.
-    
-      \item <{\color{Tag}var} {\color{Attr}ref}={\color{Value}''d''}/> :
-        Változóhivatkozás. A d változó értékét adja vissza.
-    
-      \item <{\color{Tag}intlit}
-        {\color{Attr}value}={\color{Value}''5''}/> : Számliterál. A
-        \attr{value} attribútumban kapott szám az értéke.
-    
-      \item <{\color{Tag}lt}> <{\color{Tag}/lt}> : <. (Kisebb.) Binér
-        reláció, tehát két argumentuma van. Igaz értékkel tér vissza,
-        ha az első argumentum kisebb, mint a második. Az argumentumai
-        lehetnek változóhivatkozások, számliterálok.
-    
-      \item <{\color{Tag}le}> <{\color{Tag}/le}> : <=. (Kisebb vagy
-        egyenlő.) Binér reláció. Igaz az értéke, ha az első argumentum
-        kisebb vagy egyenlő, mint a második.
-    
-      \item <{\color{Tag}gt}> <{\color{Tag}/gt}> : >. (Nagyobb.) Binér
-        reláció. Igaz, ha az első argumentum nagyobb, mint a második.
-    
-      \item <{\color{Tag}ge}> <{\color{Tag}/gt}> : >=. (Nagyobb vagy
-        egyenlő.) Binér reláció. Igaz, ha az első argumentuma nagyobb
-        vagy egyenlő, mint a második.
-    
-      \item <{\color{Tag}eq}> <{\color{Tag}/eq}> : ==. (Egyenlő.)
-        Binér reláció. Igaz, ha a két argumentuma egyenlő.
-    
-      \item <{\color{Tag}and}> <{\color{Tag}/and}> : És. Argumentumai
-        logikai értékek. Igaz értékkel tér vissza, ha minden
-        argumentumának értéke igaz, különben hamis értekkel.
-    
-      \item <{\color{Tag}or}> <{\color{Tag}/or}> : Vagy. Argumentumai
-        logikai értékek. Igaz értékkel tér vissza, ha van olyan
-        argumentuma, amelynek értéke igaz. Különben hamissal.
-    
-      \item <{\color{Tag}not}> <{\color{Tag}/not}> : Negáció. Egy
-        argumentuma van, mely egy logikai érték. Igazhoz hamisat,
-        hamishoz igazat rendel.
-    
-      \item <{\color{Tag}cond}> <{\color{Tag}/cond}> : Feltétel. Három
-        argumentuma van. Amennyiben az első argumentum értéke igaz,
-        akkor a második argumentumra kerül a vezérlés, különben a
-        másodikra.
-    
-      \item <{\color{Tag}if}> <{\color{Tag}/if}> : Elágazás. Van egy
-        feltétele, melynek teljesülése esetén az igaz ágra kerül a
-        vezérlés, különben a hamis ágra. Lehetséges az is, hogy nincs
-        hamis ág. Ebben az esetben, ha a feltétel nem teljesül, akkor
-        a következő jelölővel folytatódik a történet.  pl:
-    
-      \item <{\color{Tag}take}
-        {\color{Attr}item}={\color{Value}''item''}/> : Eszköz
-        felvétele. Kalandunk során számon kell tartanunk, hogy milyen
-        eszközökre tettünk szert. Ezekre leginkább a későbbiekben lesz
-        szükségünk. Elérkezhetünk egy olyan megmérettetéshez, melynek
-        sikeressége az adott tárgy birtoklásán múlhat.
-    
-      \item <{\color{Tag}drop}
-        {\color{Attr}item}={\color{Value}''item''}/> : Tárgy eldobása,
-        felhasználása. Ha felhasználunk egy korábban megszerzett
-        tárgyat, de az már a későbbiekben nem marad nálunk, akkor
-        használjuk ezt a jelölőt.
-    
-      \item <{\color{Tag}inc}
-        {\color{Attr}counter}={\color{Value}''item''}/> : Lehet az a
-        feladatunk a kaland során, hogy egy adott tárgyból össze kell
-        gyűjtenünk többet. Ennek a segítségével tudjuk az adott eszköz
-        számát nyilvántartanunk, tehát ha találunk egy újabbat, akkor
-        csak annyit jegyzünk meg, hogy találtunk még egyet.
-    
-      \item <{\color{Tag}dec}
-        {\color{Attr}counter}={\color{Value}''item''}/> : Amikor a
-        gyűjtés során elveszítünk vagy felhasználunk egy tárgyat.
-    
-      \item <{\color{Tag}set-flag}
-        {\color{Attr}flag}={\color{Value}''flag''}/> : Szükségünk lehet
-        arra is, hogy megjegyezzünk olyan dolgokat, hogy már
-        megtörtént velünk egy bizonyos dolog. A későbbiekben ez
-        befolyásolhatja utunkat.
-    
-      \item <{\color{Tag}heal}
-        {\color{Attr}stat}={\color{Value}''stat}''> <{\color{Tag}intlit}
-        {\color{Attr}value}={\color{Value}''1''}> <{\color{Tag}/heal}> :
-        A stat attribútum által meghatározott jellemzőnk
-        növelése. Annyival nő az értéke, amennyi a nyitó és záró
-        jelölő közötti érték.
-    
-      \item <{\color{Tag}damage}
-        {\color{Attr}stat}={\color{Value}''health''}>
-        <{\color{Tag}intlit} {\color{Attr}value}={\color{Value}''1''}>
-        <{\color{Tag}/damage}> : A stat attribútum által meghatározott
-        jellemzőnk csökkenése. Annyival lesz kevesebb az értéke,
-        amennyi a nyitó es záró jelölő közötti érték.
-    
-      \item <{\color{Tag}counter}
-        {\color{Attr}name}={\color{Value}''item''}/> : A \attr{name}
-        attribútumban meghatározott tárgy számát adja meg, hogy
-        mennyit sikerült összegyűjtenünk belőle.
-
-      \item <{\color{Tag}clear}
-        {\color{Attr}counter}={\color{Value}''item''}/> : A gyűjtött
-        tárgyat elveszítjük, vagyis a száma 0 lesz.
-        
-      \item <{\color{Tag}carry}
-        {\color{Attr}item}={\color{Value}''item''}/> : Rendelkezünk-e az
-        adott tárggyal.
-    
-      \item <{\color{Tag}plus}> <{\color{Tag}/plus}> : Két argumentuma
-        van, visszaadja ezeknek az attribútumoknak az összegét.
-    
-      \item <{\color{Tag}score}
-        {\color{Attr}stat}={\color{Value}''stat''}/> : A \attr{stat}
-        attribútumban meghatározott jellemzőnk lekérdezése.
-    
-      \item <{\color{Tag}f{}ight}> <{\color{Tag}/f{}ight}> : Harc egy
-        mesebeli lénnyel.
-    
-      \item <{\color{Tag}enemy}
-        {\color{Attr}agility}={\color{Value}''10''}
-        {\color{Attr}health}={\color{Value}''8''}> </enemy> : Az
-        ellenfél, akivel harcolnunk kell. Az attribútumai megadják a
-        lény \stat{ügyességét} és \stat{ételerejét}. A jelölők közti
-        szöveg, pedig a nevét.
+      \item Pontok vesztése, visszaszerzése
+        Ebben a példában azt, hogy a hősünk nyer 1 \stat{életerő pontot} a
+        <{\color{Tag}heal}> jelölő segítségével írtam le. A \attr{stat}
+        attribútumában megadtam, hogy a életerő jellemző
+        változtatásáról van tehát szó, és a nyitó és csukó jelölők közé írt
+        számmal növekszik az érték. Ehhez az <{\color{Tag}intlit}
+        {\color{Attr}value}={\color{Value}''1''}> volt a segítségemre.
+        Hasonlóan írtam le a 2 \stat{ügyességi pont} elvésztését a <{\color{Tag}damage}>
+        jelölővel. A \attr{stat} attribútumban megadtam az ügyesség
+        jellemzőt, és az <{\color{Tag}intlit}> segítségével pedig a számot,
+        amennyivel csökkenteni szeretném az értéket.
+        \begin{lstlisting}
+<p>
+  A szokokut hideg vize felfrissit, de furcsa
+  mellekhatasa van. Nyersz 1 ELETERO pontot,
+  <heal stat="health">
+    <intlit value="1"/>
+  </heal>      
+  de vesztesz 2 UGYESSEGI pontot,
+  <damage stat="agility">
+    <intlit value="2"/>
+    </damage>            
+  mert a viztol igen gyorsan megoregszel.
+  Elszantan mesz tovabb az alagutban -
+  <goto ref="329"/>.
+</p>
+        \end{lstlisting}
     \end{itemize}
+    
   \section{Fejlesztői dokumentáció}
+    Tehát a nagyprogramomban két részt lehet élesen elkülöníteni. Az
+    egyik a motor, mely beolvassa az xml fájlt, átfordítja saját
+    nyelvre, műveleteket elvégzi és ad egy kimenetet. Ez a kimenet
+    minden információt tartalmaz a kinézettel kapcsolatban, hogy
+    mikor érünk új oldalra, mikor van csata, hová lehet menni az
+    adott oldalról,\dots stb. 
     \subsection{Motor}
+      Ahhoz, hogy ezt az xml nyelvet értelmezni tudjuk, szükségünk van
+      egy saját nyelvre. Ezeket a nyelvi elemeket a PageLang.hs
+      modulban írtam le.
+      Először is szükségünk van néhány alapvető típusra.\\
+      {\color{Keyword}type} {\color{Cons}Item} = {\color{Cons}String}\\
+      type Flag = String\\
+      type Counter = String\\
+      type Die = String -- Dobokocka\\
+      type ImageId = String\\
+      Ezek tulajdonkeppen szinonímák a karaktersorozatra. Mégis meg
+      akarjuk különböztetni őket sima karaktersorozattól, hogy a
+      típusokban is megjelenjen a szándékunk.
+
     \subsection{Megjelenítés}
 \end{document}
