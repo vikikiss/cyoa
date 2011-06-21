@@ -47,28 +47,28 @@ data-dir: pictures
 data-files: heart_icon.png
             luck_icon.png
             sword_icon.png
-            bug2.jpg
-            chaosChampion2.jpg
-            csontordog2.jpg
-            devil2.jpg
-            fireDevil2.jpg
-            Hero42.jpg
-            keletiHadur2.jpg
+            bug.jpg
+            chaosChampion.jpg
+            csontordog.jpg
+            devil.jpg
+            fireDevil.jpg
+            Hero4.jpg
+            keletiHadur.jpg
             licheKiralyno.jpg
-            monster22.jpg
-            monster12.jpg
-            nyelv2.jpg
-            ogre12.jpg
-            ogre22.jpg
-            rabszolga2.jpg
-            rat2.jpg
-            skeletonKing2.jpg
-            spider2.jpg
-            statue2.jpg
-            tentallus2.jpg
+            monster2.jpg
+            monster1.jpg
+            nyelv.jpg
+            ogre1.jpg
+            ogre2.jpg
+            rabszolga.jpg
+            rat.jpg
+            skeletonKing.jpg
+            spider.jpg
+            statue.jpg
+            tentallus.jpg
             twoHeadedDog.jpg
-            vampire2.jpg
-            verfereg2.jpg
+            vampire.jpg
+            verfereg.jpg
             
 Executable cyoa-gtk
   hs-source-dirs: src
