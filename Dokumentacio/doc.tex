@@ -509,18 +509,86 @@ elkülönül egymástól a motor és a megjelenítés.
     mikor érünk új oldalra, mikor van csata, hová lehet menni az
     adott oldalról,\dots stb. 
     \subsection{Motor}
-      Ahhoz, hogy ezt az xml nyelvet értelmezni tudjuk, szükségünk van
-      egy saját nyelvre. Ezeket a nyelvi elemeket a PageLang.hs
-      modulban írtam le.
-      Először is szükségünk van néhány alapvető típusra.\\
-      {\color{Keyword}type} {\color{Cons}Item} = {\color{Cons}String}\\
-      type Flag = String\\
-      type Counter = String\\
-      type Die = String -- Dobokocka\\
-      type ImageId = String\\
-      Ezek tulajdonkeppen szinonímák a karaktersorozatra. Mégis meg
-      akarjuk különböztetni őket sima karaktersorozattól, hogy a
-      típusokban is megjelenjen a szándékunk.
+    A nagyprogramomnak tárolni kell különböző információkat. Például ha
+    kaland során felveszünk egy tárgyat, azt valahol meg kell jegyeznünk, mert a
+    későbbiekben fel akarjuk használni. Tehát szükségünk van valamilyen
+    állapotra, mely folyamatosan módosul, és melyet lekérdezhetünk
+    időről időre.
+    Ezt az állapotot egy algebrai adattípussal írtam le, mely az
+    alábbi:
+    \begin{minted}{haskell}
+    data GameState = GS { player\_state :: PlayerState
+                        , fight\_state :: Maybe FightState
+                        , page\_state :: Map Die Int
+                        }
+                   deriving (Show, Read)
+    \end{minted}
+    Így a játék állapotában szükségünk van a játékos állapotára, melyet
+    lejjebb fogok részletezni. A player\_state írja le ezt. Mivel csaták is lehetnek a kaland során, amikor
+    egy különös lénnyel találkozunk, ezért kell egy csata állapota
+    is. Az implementáció miatt ez opcionális vagyis vagy van ilyen
+    fight\_state vagy nincs, attól függően, hogy épp hacolunk-e vagy
+    csak kalandozunk. A page\_state a kockadobások eredményeit
+    tárolja. Amikor dobunk egyet a kockával, később le akarjuk
+    kérdezni az eredményét, mert ez befolyásolja kalandunk további
+    kimenetét az adott oldalon.
+    
+    A játékos állapota: kaland írásánál, kitalálásánál, hogy a
+    történet minél színesebb, fordulatosabb legyen, sok információt
+    kell eltárolnunk. Ilyen információ, hogy milyen eszközöket viszünk
+    magunkkal kezdetben, vagy miket találtunk eddig az út során.  Ezt
+    tárolja a player\_carries nevű mező az állapotban.
+
+    Vannak olyan események, melyeket nem lehet egyszerűen azzal
+    leírni, hogy eltesszük, mint egy tárgyat. Például, hogy jártunk
+    egy könyvtárban, ahol egy könyvben olvastunk kalandunk hátteréről.
+    Itt kiderülhet egy nagyon fontos részlet. Ha majd sikeresen elérkezünk
+    kalandunk végkimeneteléhez, akkor például egy adott folyosón
+    semmiképpen se jobbra, hanem balra menjünk, mert jobbra egy csapda
+    vár ránk. Ezt fel kell jegyeznünk magunknak. Ehhez hasonló
+    információkat tárol a player\_flags.
+
+    Ebben a kokrét kalandban, amit feldolgoztam, az volt a feladat,
+    hogy összegyűjtsünk gyűrűket. Ezt számon kellett tartani, így
+    szükség volt egy olyan adatszerkezetre, mely tárolja a gyűjtött
+    tárgy nevét és hogy eddig mennyit találtunk belőle. Ez kezdetben
+    0, majd minden esetben, ahol egy újabb gyűrűt találtunk, csak a
+    gyűrűk számát növeltem eggyel. Erre való a player\_counters nevű mező.
+
+    Játékos ,,létrehozásánál'' az első lépés, hogy meghatározzuk az
+    életerő, ügyességi és szerencse pontjait. (A papíros játékban is
+    ezzel kezdődött a kaland és itt a programban is ez az első lépés,
+    amikor elkezdünk játszani.) A játék szabálya azt mondja, hogy ezen
+    értékeket folyamatosan befolyásolja a kalandok sokasága, de nem
+    csökkenhet 0 alá (mert az azt jelenti, hogy a kalador elbukta
+    küldetését), és nem nőheti túl a kezdeti értéket. Ezért az aktuális
+    értékek eltárolása mellett szükségünk van arra is, hogy kezdetben
+    mennyi volt ez az érték. Ezért van player\_stats
+    mező, mely minden tulajdonsághoz tárolja az aktuális és kezdeti értékeket.
+
+    További fontos információ, melyet lépésről lépésre változtatunk,
+    lekérdezünk, hogy hányadik oldalon tartunk éppen a
+    küldetésünkben. Erre szolgál a player\_page.
+
+    Ezek alapján kaptam tehát a játékos állapotát:
+    \begin{minted}{haskell}
+    data PlayerState = PS { player\_carries :: Set Item
+                          , player\_flags :: Set Flag
+                          , player\_counters :: Map Counter Int
+                          , player\_stats :: Map Stat (Int, Int) -- (current, initial)
+                          , player\_page :: PageNum
+                          }
+                     deriving (Show, Read)
+    \end{minted}
+
+    A háttérben lévő CyoaT monád egy monádtranszformátor, melynek külseje
+    egy error monád, a belseje pedig egy RWST monádtranszformátor, ami
+    az IO monád fölött van.
+    newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent (RWST (Array PageNum Page, [PageItem]) Output GameState m) a }
+  deriving (Monad, Functor, MonadIO,
+            MonadError GameEvent,
+            MonadState GameState, MonadReader (Array PageNum Page, [PageItem]), MonadWriter Output,
+            Applicative)
 
     \subsection{Megjelenítés}
 \end{document}
