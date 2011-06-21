@@ -19,10 +19,13 @@
 \definecolor{Value}{RGB}{59,125,37}
 \definecolor{CodeBg}{RGB}{232,232,232}
 \definecolor{Keyword}{RGB}{180,82,205}
-\definecolor{Cons}{RGB}{0,139,0}
+\definecolor{State}{RGB}{0,139,0}
 
 \newcommand{\xtag}[1]{{\color{Tag}#1}}
 \newcommand{\xattr}[2]{{\color{Attr}#1}={\color{Value}''#2''}}
+
+\newcommand{\xstate}[1]{{\color{State}#1}}
+\newcommand{\dt}[1]{{\color{State}#1}}
 
 \newcommand{\stat}{\textsc}
 \newcommand{\attr}{\emph}
@@ -68,12 +71,20 @@
 
   Mivel a játékos mondja meg, hogy mi legyen a következő lépés, ő
   befolyásolja a további történést, ezért jó ötletnek találtam ezt
-  megvalósítani egy programozási nyelven. Minden oldal elején a történet
-  folytatódik és az oldal végeztével a játékos megmondhatja, hogy
-  melyik kínálkozó utat választja. Így folyamatos interakcióra van
-  szükség a játékos részéről. Miután eldöntötte, hogy merre folytatja
-  kalandját, átmegy arra az oldalra, ahol további kalandok, veszélyek
-  leselkednek rá.
+  megvalósítani egy programozási nyelven. Így egy játékprogramot
+  kaptam, de szerettem volna meghagyni a könyvjelleget, azt az érzést,
+  amit az eredeti játék nyújtott. Nem akartam, hogy egy modernebb
+  kiadás legyen belőle. Jövőbeli tervként lehet rajta gondolkodni,
+  hogy hogyan lehetne modernizálni, mit lehetne másként csinálni,
+  amitől olyan lesz, mint egy igazi, manpság népszerű számítógépes
+  játék. Magában az eredeti játékban (és az én nagyprogramomban is)
+  minden új oldal elején a történet folytatódik és az oldal végeztével
+  a játékos megmondhatja, hogy melyik kínálkozó utat választja. Így
+  folyamatos interakcióra van szükség a játékos részéről. Miután
+  eldöntötte, hogy merre folytatja kalandját, átmegy arra az oldalra,
+  ahol további kalandok, veszélyek leselkednek rá. Ezért az eredeti
+  játék címe a \emph{Choose your own adventure}, vagyis válaszd te az
+  utad a kaland során.
   
   Az eredeti játék az volt, hogy a könyvet olvasva a játékos
   kigyűtötte magának az információkat, amelyet kalandja során
@@ -187,7 +198,81 @@
         akinek kalandjait mi választjuk meg, mi a célja, honnan indul és
         hová akar érkezni.
     \section{Program indítása, használata}
-      TODO
+      \subsection{Program indítása}
+      A nagyprogramomhoz készítettem egy \proglang{cabal} csomagot. A
+      \proglang{cabal} a \proglang{Haskell} nyelvhez tartozó csomagkezelő, amely könyvtárak
+      és programok kezelésére szolgál megkönnyítve a feltelepítést. A
+      csomag neve cyoa, tehát a {\bf cabal install cyoa} kód segítségével
+      telepíthető.
+
+      Két futtatható állományt készítettem hozzá, mert két
+      felhasználását mutatom be a motor által készített kimenetnek. Az
+      egyik egy \proglang{GTK} segítségével készített grafikus felhasználói
+      felület. Ennek futtatása a {\bf cyoa-gtk <fájlnév>} paranccsal
+      történik. Egy másik felhasználását is be akartam mutatni a
+      kimenetemnek, mely webes környezetben fut. Ennek futtatására
+      a {\bf cyoa-yesod <fájlnév>} parancs van a segítségünkre. Az
+      alábbiakban részletezem a két felhasználást.
+
+      \subsection{Graf{}ikus felhasználói felület használata}
+        A program indítása után kapunk egy ablakot, melynek bal
+        oldalán egy kép látható a hősünkről, jobb oldalon pedig a
+        hősünk jellemzőit tudjuk beálltani. Minden kalandornak
+        rendelkeznie kell \stat{életerő}, \stat{ügyességi} és
+        \stat{szerencse} pontokkal. A program is ugyanúgy indul, mint
+        az eredeti papíros játék, hogy dobókockával dobnunk kell, de
+        ez itt programatikusan történik meg. A \emph{Dobj} feliratú gombra
+        kattintással történik meg a dobás, és a kattintás után a gomb
+        címkéjében található a dobás értéke. A pontok meghatározása az
+        eredeti játékszabály alapján történik.
+
+        A jobb alsó sarokban mindig figyelemmel követhetjük, hogy
+        hősünk milyen jellemzőkkel bír, mivel ez folyamatosan változik
+        kalandról kalandra. A szív jelenti az \stat{életerőt}, a kard
+        az \stat{ügyességet}, a csillag a \stat{szerencsét}. A
+        mellettük látható szám pedig az aktuális értéket
+        mutatja. Miután készen vagyunk ezen tulajdonságok
+        meghatározásával, következhet az igazi kaland. Kapunk egy
+        linket, melyre kattintva elkezdhetjük küldetésünk.
+
+        A további oldalak hasonlóan néznek ki. A jobb oldalon látható
+        hősünk képe, mely csak akkor változik, amikor egy szörnnyel
+        találkozunk a kalandozás során. Ekkor a szörny képe kerül az
+        eddigi kép helyére. A bal oldalon folytatódik a
+        történet. Az oldal végén kék színnel kiemelt linkeket
+        találunk, mely a kaland folytatását ajánlja fel. Itt
+        természetesen mindig a játékos dönt, hogy merre szeretne
+        továbbhaladni, így alakítva a kalandot olyanná, amilyenre
+        szeretné. Tehát a kék linkre kattintva lehet a következő
+        oldalra menni.
+
+        Találkozhatunk a \emph{Tedd próbára a szerencsédet!}
+        utasítással. Ekkor az a teendő, hogy két kockával kell dobni,
+        majd attól függően, hogy szerencsések voltunk-e megjelenik a
+        link, amerre utunkat folyatathatjuk. Itt én csak azt a linket
+        tettem ki, mely vonatkozik a játékosra, hiszen a másik út
+        számára nem releváns.
+
+        Amikor elérkezünk egy harchoz, előbb kapunk egy \emph{Harcolj!}
+        linket, melyre kattintva jutunk el az összecsapásig. A
+        kattintás után látjuk ellenfelünk tulajdonságait, hogy
+        mennyire erős, ügyes. Itt körönként megy a harc. Ennek
+        leírását lásd a játékszabályoknál. A \stat{Dobj!} feliratú gombokra
+        kattintva érjük el a kockadobást, és a linkek segítségével
+        dönthetjük el, hogy kockáztatni szeretnénk-e a körök
+        végén. Amennyiben legyőzzük ellenfelünket, akkor megkapjuk a
+        linket, mely a továbbhaladást mutatja. Ellenkező esetben véget
+        ér a játékunk.
+
+        Itt egy példa a csata elbukására.
+        
+      \subsection{Webes felület használata}
+        Amikor elindítottuk a programunkat, akkor egy böngésző
+        segítségével tudjuk a játékunkat elkezdeni a
+        http://localhost:3000/ elérési úton. Új játék kezdetéhez a
+        http://localhost:3000/start útat kell megadni.
+
+        A többi felhasználási javaslat ugyanaz, mint az előbbiben.
       
 \chap{Fejlesztői dokumentáció} A nagyprogramot \proglang{Haskell}
 nyelven implementáltam. Alapvetően két részből áll maga a program, egy
@@ -521,18 +606,19 @@ elkülönül egymástól a motor és a megjelenítés.
     Ezt az állapotot egy algebrai adattípussal írtam le, mely az
     alábbi:
     \begin{minted}{haskell}
-    data GameState = GS { player\_state :: PlayerState
-                        , fight\_state :: Maybe FightState
-                        , page\_state :: Map Die Int
+    data GameState = GS { player_state :: PlayerState
+                        , fight_state :: Maybe FightState
+                        , page_state :: Map Die Int
                         }
                    deriving (Show, Read)
     \end{minted}
-    Így a játék állapotában szükségünk van a játékos állapotára, melyet
-    lejjebb fogok részletezni. A player\_state írja le ezt. Mivel csaták is lehetnek a kaland során, amikor
-    egy különös lénnyel találkozunk, ezért kell egy csata állapota
-    is. Az implementáció miatt ez opcionális vagyis vagy van ilyen
-    fight\_state vagy nincs, attól függően, hogy épp hacolunk-e vagy
-    csak kalandozunk. A page\_state a kockadobások eredményeit
+    Így a játék állapotában szükségünk van a játékos állapotára,
+    melyet lejjebb fogok részletezni. A \xstate{player\_state} írja le
+    ezt. Mivel csaták is lehetnek a kaland során, amikor egy különös
+    lénnyel találkozunk, ezért kell egy csata állapota is. Az
+    implementáció miatt ez opcionális vagyis vagy van ilyen
+    \xstate{fight\_state} vagy nincs, attól függően, hogy épp hacolunk-e vagy
+    csak kalandozunk. A \xstate{page\_state} a kockadobások eredményeit
     tárolja. Amikor dobunk egyet a kockával, később le akarjuk
     kérdezni az eredményét, mert ez befolyásolja kalandunk további
     kimenetét az adott oldalon.
@@ -542,7 +628,7 @@ elkülönül egymástól a motor és a megjelenítés.
     fordulatosabb legyen, sok információt kell eltárolnunk. Ilyen
     információ, hogy milyen eszközöket viszünk magunkkal kezdetben,
     vagy miket találtunk eddig az út során.  Ezt tárolja a
-    player\_carries nevű mező az állapotban.
+    \xstate{player\_carries} nevű mező az állapotban.
 
     Vannak olyan események, melyeket nem lehet egyszerűen azzal
     leírni, hogy eltesszük, mint egy tárgyat. Például, hogy jártunk
@@ -551,37 +637,39 @@ elkülönül egymástól a motor és a megjelenítés.
     kalandunk végkimeneteléhez, akkor például egy adott folyosón
     semmiképpen se jobbra, hanem balra menjünk, mert jobbra egy csapda
     vár ránk. Ezt fel kell jegyeznünk magunknak. Ehhez hasonló
-    információkat tárol a player\_flags.
+    információkat tárol a \xstate{player\_flags}.
 
     Ebben a kokrét kalandban, amit feldolgoztam, az volt a feladat,
     hogy összegyűjtsünk gyűrűket. Ezt számon kellett tartani, így
     szükség volt egy olyan adatszerkezetre, mely tárolja a gyűjtött
     tárgy nevét és hogy eddig mennyit találtunk belőle. Ez kezdetben
     0, majd minden esetben, ahol egy újabb gyűrűt találtunk, csak a
-    gyűrűk számát növeltem eggyel. Erre való a player\_counters nevű mező.
+    gyűrűk számát növeltem eggyel. Erre való a
+    \xstate{player\_counters} nevű mező.
 
     Játékos ,,létrehozásánál'' az első lépés, hogy meghatározzuk az
-    életerő, ügyességi és szerencse pontjait. (A papíros játékban is
-    ezzel kezdődött a kaland és itt a programban is ez az első lépés,
-    amikor elkezdünk játszani.) A játék szabálya azt mondja, hogy ezen
-    értékeket folyamatosan befolyásolja a kalandok sokasága, de nem
-    csökkenhet 0 alá (mert az azt jelenti, hogy a kalador elbukta
-    küldetését), és nem nőheti túl a kezdeti értéket. Ezért az aktuális
-    értékek eltárolása mellett szükségünk van arra is, hogy kezdetben
-    mennyi volt ez az érték. Ezért van player\_stats
-    mező, mely minden tulajdonsághoz tárolja az aktuális és kezdeti értékeket.
+    \stat{életerő}, \stat{ügyességi} és \stat{szerencse pontjait}. (A
+    papíros játékban is ezzel kezdődött a kaland és itt a programban
+    is ez az első lépés, amikor elkezdünk játszani.) A játék szabálya
+    azt mondja, hogy ezen értékeket folyamatosan befolyásolja a
+    kalandok sokasága, de nem csökkenhet 0 alá (mert az azt jelenti,
+    hogy a kalador elbukta küldetését), és nem nőheti túl a kezdeti
+    értéket. Ezért az aktuális értékek eltárolása mellett szükségünk
+    van arra is, hogy kezdetben mennyi volt ez az érték. Ezért van
+    \xstate{player\_stats} mező, mely minden tulajdonsághoz tárolja az aktuális
+    és kezdeti értékeket.
 
     További fontos információ, melyet lépésről lépésre változtatunk,
     lekérdezünk, hogy hányadik oldalon tartunk éppen a
-    küldetésünkben. Erre szolgál a player\_page.
+    küldetésünkben. Erre szolgál a \xstate{player\_page}.
 
     Ezek alapján kaptam tehát a játékos állapotát:
     \begin{minted}{haskell}
-    data PlayerState = PS { player\_carries :: Set Item
-                          , player\_flags :: Set Flag
-                          , player\_counters :: Map Counter Int
-                          , player\_stats :: Map Stat (Int, Int)
-                          , player\_page :: PageNum
+    data PlayerState = PS { player_carries :: Set Item
+                          , player_flags :: Set Flag
+                          , player_counters :: Map Counter Int
+                          , player_stats :: Map Stat (Int, Int)
+                          , player_page :: PageNum
                           }
                      deriving (Show, Read)
     \end{minted}
@@ -592,10 +680,10 @@ elkülönül egymástól a motor és a megjelenítés.
     tárolnunk az összes ilyen mesebeli szörnyet, akik arra várnak,
     hogy megtámadhassanak. A szabályok szerint egyszerre csak lénnyel
     kell megküzdenünk, tehát egymás után következnek. A szörnyek
-    tárolása a fight\_enemies listában történik.
+    tárolása a \xstate{fight\_enemies} listában történik.
 
     Az implementáció miatt volt szükség feljegyeznem,
-    hogy mi volt az előző forduló, ezt a fight\_last\_round teszi
+    hogy mi volt az előző forduló, ezt a \xstate{fight\_last\_round} teszi
     meg.
 
     A könyv formája olyan, hogy az oldal elején leírja a
@@ -606,29 +694,33 @@ elkülönül egymástól a motor és a megjelenítés.
     szeretném, ha a kimenetben rögtön megjelenne, hogy merre van a
     továbbvezető út, mert ekkor még nem releváns számunkra. Úgy
     gondoltam, hogy akkor szeretném ezt megjeleníteni, ha már
-    legyőztük ellenségeinket, különben egyáltalan ne jelenjen
-    meg. Így a fight\_cont nevű mezőben tárolom a csata utáni
+    legyőztük ellenségeinket, különben egyáltalán ne jelenjen
+    meg. Így a \xstate{fight\_cont} nevű mezőben tárolom a csata utáni
     folytatást, ami az oldal folyatását reprezentálja.
     \begin{minted}{haskell}
-    data FightState = FS { fight\_enemies :: [Enemy]
-                         , fight\_last\_round :: Maybe FightRound
-                         , fight\_cont :: [PageItem]
+    data FightState = FS { fight_enemies :: [Enemy]
+                         , fight_last_round :: Maybe FightRound
+                         , fight_cont :: [PageItem]
                          }
                     deriving (Show, Read)
     \end{minted}
     
     \subsection{Monádok a háttérben}
-    Egy CyoaT nevű monád van a háttérben, mely egy monád-interfészt
+    Egy {\bf CyoaT} nevű monád van a háttérben, mely egy monád-interfészt
     húz az állapot kezelése fölé. Ez minden olyan műveletet nyújt,
-    amivel meg lehet változtatni az állapotot.  Tehát a CyoaT monádom
-    egy monádtranszformátor, melynek külseje egy error monád, a
-    belseje pedig egy RWST monádtranszformátor, ami az IO monád fölött
-    van. A Reader monádban tárolom a magukat az oldalakat, és amikor
+    amivel meg lehet változtatni az állapotot.  Tehát a {\bf CyoaT} monádom
+    egy monádtranszformátor, melynek külseje egy {\bf Error} monád, a
+    belseje pedig egy {\bf RWST} monádtranszformátor, ami az {\bf IO} monád fölött
+    van. A {\bf Reader} monádban tárolom a magukat az oldalakat, és amikor
     elérkezünk egy új oldalra, akkor csak le kell kérdezni az
-    aktuálisat. A Writer monádba kerül a kimenet, amely egy további
-    algebrai adattípus. A State monád pedig egy játék állapotot ír le.
-    Az IO monádra a véletlenszám generálásakor van szükség. A
-    kockadobásnál generálunk egy számot 1 és 6 között.
+    aktuálisat. A {\bf Writer} monádba kerül a kimenet, amely egy további
+    algebrai adattípus. A {\bf State} monád pedig egy játék állapotot ír le.
+    Az {\bf IO} monádra a véletlenszám generálásakor van szükség. A
+    kockadobásnál generálunk egy számot 1 és 6 között. Az {\bf Error}
+    monádot a kaland elbukásának kezelésére használom, mert az bármikor
+    megtörténhet, hogy egy oldal kiértékelése közben meghal a kalandorunk
+    akár csatában, akár azért mert olyan oldalra került, ahonnan nincs
+    tovább.
     \begin{minted}{haskell}
     newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent
       (RWST (Array PageNum Page, [PageItem])
@@ -642,8 +734,10 @@ elkülönül egymástól a motor és a megjelenítés.
 
     \subsection{A monád műveletei}
     \begin{minted}{haskell}
-modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
-modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
+modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) ->
+CyoaT m ()
+modifyPlayerState f = modify $ \gs -> gs{ player_state = f
+  (player_state gs) }
     \end{minted}
     Tehát a modifyPlayerState módosítja a játék állapotát. A
     paraméterül kapott PlayerState -> PlayerState függvény mondja meg,
@@ -682,7 +776,7 @@ carries item =
   gets $ Set.member item . player_carries . player_state
     \end{minted}
     Szükségünk lehet lekédezni, hogy egy adott elemmel
-    rendelkezünk-e. Ennek segítségére van ez a carries függvény.
+    rendelkezünk-e. Ennek segítségére van ez a \emph{carries} függvény.
 
     \begin{minted}{haskell}
 flagSet :: (Monad m) => Flag -> CyoaT m Bool
@@ -713,24 +807,25 @@ getCounter counter = do
 
 modifyCounter :: (Monad m) => (Int -> Int) -> Counter -> CyoaT m ()
 modifyCounter f counter = do
-  modifyPlayerState $ \ps -> ps { player_counters = Map.alter f' counter (player_counters ps) }
+  modifyPlayerState $ \ps -> ps { player_counters = Map.alter f'
+    counter (player_counters ps) }
   where f' mx = Just $ f $ 0 `fromMaybe` mx
     \end{minted}
     Ebben a könyben, melyet feldolgoztam gyűrűket kell
     gyűjteni. Amikor találunk egy újabbat, akkor változik a játékos
     állapota úgy, hogy fel kell jegyeznünk, hogy még egy ilyen
     gyűjtött tárgyat találtunk. A modifyCounter vátoztatja meg az
-    állatpotot. A paraméterül kapott Int -> Int függvény mondja meg,
+    állatpotot. A paraméterül kapott \emph{Int -> Int} függvény mondja meg,
     hogy mennyi az új érték a régi függvényében, ezután ennyi darab
-    lesz a tarsolyunkban. A getCounter pedig lekérdezi az állapotból.
+    lesz a tarsolyunkban. A \emph{getCounter} pedig lekérdezi az állapotból.
 
     \begin{minted}{haskell}
 getStat :: (Monad m) => Stat -> CyoaT m Int
 getStat a = gets $ fst . fromJust . Map.lookup a . player_stats
 . player_state
     \end{minted}
-    A getStat függvénnyel a paraméterül kapott jellemzőt (életerő,
-    ügyesség, szerencse) kérdezhetjük le.
+    A \emph{getStat} függvénnyel a paraméterül kapott jellemzőt (\stat{életerő},
+    \stat{ügyesség}, \stat{szerencse}) kérdezhetjük le.
 
     \begin{minted}{haskell}
 modifyStat :: (Monad m) => (Int -> Int) -> Stat -> CyoaT m ()
@@ -755,7 +850,7 @@ modifyStat f stat = do
     életerőnk csökken. Ennek módosítása ezzel a függvénnyel
     történik. A játékszabályokban az is benne van, hogy ezek a pontok
     nem csökkenhetnek 0 alá. Ilyen esetben a kimenetbe elküldjük, hogy
-    ,,Életerő pontjaid elfogytak, kalandod itt véget ér.'' Azonban a
+    \emph{,,Életerő pontjaid elfogytak, kalandod itt véget ér.''}. Azonban a
     kezdeti érték fölé sem mehetnek gyógyulás alkalmával. Erre is fel
     van készítve ez a függvény.
 
@@ -764,20 +859,17 @@ getDice :: (Monad m) => Die -> CyoaT m Int
 getDice d = gets (fromJust . Map.lookup d . page_state)
 
 addDice :: (Monad m) => Die -> Int -> CyoaT m ()
-addDice d value = modify $ \gs -> gs{ page_state = Map.insert d value (page_state gs) }
+addDice d value = modify $ \gs -> gs{ page_state = Map.insert d value
+  (page_state gs) }
 
 clearDice :: (Monad m) => CyoaT m ()
 clearDice = modify $ \gs -> gs{ page_state = Map.empty }
-
-die :: (Monad m) => CyoaT m ()
-die = do
-  throwError DeathEvent
   \end{minted}
 
     Ezek a függvények a kockadobás miatti állapotváltozásokat,
-    állapotlekérdezéseket kezelik. A getDice művelettel egy konkrét
-    kockának az értékét kérdezzük le. Az addDice egy új kockát
-    definiál egy konkrét étrékkel. A clearDice kitörli az eddigi kockadobásokat.
+    állapotlekérdezéseket kezelik. A \emph{getDice} művelettel egy konkrét
+    kockának az értékét kérdezzük le. Az \emph{addDice} egy új kockát
+    definiál egy konkrét étrékkel. A \emph{clearDice} kitörli az eddigi kockadobásokat.
 
       \subsubsection{Engine.hs}
       Ebben a modulban kifejezéseket, feltételeket értékelünk ki, és
@@ -787,6 +879,9 @@ die = do
       Maga a kimenet egy algebrai adattípus, amelyben azt fogalmaztam
       meg, hogy mikre kell felkészülnünk kimenet készítésekor.
       \begin{minted}{haskell}
+data Output = OutputClear String [OutputItem]
+            | OutputContinue [OutputItem]
+
 data OutputAttr = Good
                 | Bad
                 deriving Show
@@ -797,31 +892,44 @@ data OutputItem = OutText (Maybe OutputAttr) String
                 | OutBreak
                 | OutImage ImageId
 
-data outText = OutText Nothing
       \end{minted}
-      Az OutputItem-ben írtam le, hogy miket akarok közölni a
-      kimenettel kapcsolatban. Az OutText egy szöveg kiírására
-      szolgál. Van egy Maybe OutputAttr attribútuma, ami annyit
+      Az \dt{Output} algebrai adattípus mutatja, hogy milyen kimeneteink
+      lehetnek. Az egyik az \dt{OutputClear}, ami azt jelenti, hogy egy új
+      oldalra értünk, tehát az előzőt törölni kell és az újat
+      kiírni. Az \dt{OutputContinue} megkapja a hátralévő oldalt. Ezt
+      csatánál használom. Csata esetén nem egy új oldalt kezdünk,
+      hanem mindig csak hozzáírunk az előzőhöz, úgy hogy például közben
+      felhasznaló interakció is történik (lásd kockadobás vagy annak
+      eldöntése, hogy szeretnénk-e próbára tenni a szerencsénket).
+      
+      Az \dt{OutputItem}-ben írtam le, hogy miket akarok közölni a
+      kimenettel kapcsolatban. Az \dt{OutText} egy szöveg kiírására
+      szolgál. Van egy Maybe \dt{OutputAttr} attribútuma, ami annyit
       jelent, hogy jó vagy rossz dologot szeretnék közölni a játékos
       szempontjából. Rossz, ha őt sebezték, jó, ha ő sebzett egy
       csatában. De ez az attribútum opcionális.
 
-      Az OutDie segítségével írok ki a kimenetre egy kockadobást. Az
+      Az \dt{OutDie} segítségével írok ki a kimenetre egy kockadobást. Az
       Int tartalmazza az értéket.
 
-      Az OutLink segítségével teszem ki az oldalra azokat a linkeket,
-      amelley a továbbhaladást akarom közölni.
+      Az \dt{OutLink} segítségével teszem ki az oldalra azokat a linkeket,
+      amellyel a továbbhaladást akarom közölni, vagy azt, hogy éppen
+      egy csatához értünk, vagy a csatát folytatjuk.
 
-      Az OutEnemies mondja meg, hogy milyen ellenfelekkel kell
-      megküzdenie a hősnek. A paramétere egy lista, amely az
-      ellenfeleket tartalmazza, mert lehet egy vagy több ellenfél is
-      egyszerre.
+      Az \dt{OutEnemies} mondja meg, hogy milyen ellenfelekkel kell
+      megküzdenie a hősnek, tehát kiírjuk az ellenfelek
+      tulajdonságait. A paramétere egy lista, amely az ellenfeleket
+      tartalmazza, mert lehet egy vagy több ellenfél is egyszerre.
 
-      Az OutBreak sortörésre közlésére szolgál.
+      Az \dt{OutBreak} sortörésre közlésére szolgál.
 
-      Az OutImage segítségével lehet megmondani, hogy ennek az
-      oldalnak van image attribútuma, így majd változtatni kell a képen.
+      Az \dt{OutImage} segítségével lehet megmondani, hogy ennek az
+      oldalnak van \attr{image} attribútuma, így majd változtatni kell a
+      képen. Alapértelmezetten a hősünket látjuk, de amint egy csatába
+      belekerülünk, akkor az adott szörny képe jelenik meg.
 
+      Miután megnéztük mik a lehetséges kimenetek, áttérhetünk a
+      kiértékelő és kimenet előállító függvénykre.
       \begin{minted}{haskell}
 evalExpr :: (Monad m, Functor m) => Expr -> CyoaT m Int
 evalExpr (ELiteral n) = return n
@@ -836,9 +944,9 @@ evalExpr (ECond cond thn els) = do
   b <- evalCond cond
   evalExpr (if b then thn else els)
       \end{minted}
-      Kifejezések kiértékelésére van az evalExpr
+      Kifejezések kiértékelésére van az \emph{evalExpr}
       függvény. Kifejezéseink: +,-,*,%,kockadobás,gyűjés lekédezése,
-                                jellemző lekérdezése,if
+      jellemző lekérdezése,if.
 
   \begin{minted}{haskell}
 evalCond :: (Monad m, Functor m) => Cond -> CyoaT m Bool
@@ -854,7 +962,7 @@ evalCond (CNot c) = not <$> evalCond c
 evalCond (Carry item) = carries item
 evalCond (FlagSet flag) = flagSet flag
   \end{minted}
-  Feltételek kiértékelésére van az evalCond függvény. Feltételek: bool
+  Feltételek kiértékelésére van az \emph{evalCond} függvény. Feltételek: bool
   literál, és, vagy, kisebb, kisebb vagy egyenlő, nagyobb, nagyobb
   vagy egyenlő, egyenlő-e, van-e nálunk egy bizonyos tárgy,
   megcsináltunk-e egy bizonyos dolgot.
@@ -880,11 +988,111 @@ evalPage = do
       fight
   \end{minted}
   Egy oldal kiértékelésénel az az első kérdés, hogy csatában
-  vagyunk-e, vagyis, hogy ez egy folyatás vagy egy új oldal. Ha igen,
-  akkor a fight függvény jön. Ha nem, akkor az állapotból lekérdezzük
-  az oldalszámot, ahová érkeztünk, és kiírjuk. Amennyiben van image
-  attribútuma, azt közöljük a kimenetre (amely a korábban említett
-  algebrai adattípussal ábrázoltam.
+  vagyunk-e, mert ettől függnek a továbbiak. A csatánál azt szerettem
+  volna, ha az egész egy nagy oldal lenne és folytatólagosan írná ki a
+  program, hogy mi történik. Hagyományos oldal esetén pedig új oldalt
+  kezdünk. Ezért kell szétválasztani. Tehát csata
+  esetén a \emph{fight} függvénnyel folytatódik, viszont új oldal esetén le
+  kell kérdeznünk az oldal számát. Ezt el is küldjük a kimenetre. Majd
+  megnézzük, hogy van-e új kép az adott oldalhoz. Ha van, akkor azt is
+  tudatjuk a kimeneten. Majd kiértékeljük az oldal belsejét. Az
+  oldalnak olyan tulajdonsága is lehet, hogy ezen az oldalon a hős
+  elbukik, vagy megnyeri. Ezekben a különleges helyzetekben egy
+  kivételt váltunk ki.
+
+  \begin{minted}{haskell}
+evalPageItem :: (Functor m, MonadIO m) => PageItem -> CyoaT m ()
+evalPageItem (Paragraph is) = do
+  mapM_ evalPageItem is
+  emit [OutBreak]
+  \end{minted}
+  Egy bekezdés kiértékelése úgy történik, hogy benne levő
+  oldalrészleteket rekurzívan egymás után kiértékeljük, és kiírjuk a
+  kimenetre, és ha elértünk a bekezdés végére, akkor következik egy
+  sortörés.
+  \begin{minted}{haskell}
+evalPageItem (TextLit s) = emit [outText s]
+  \end{minted}
+  Szöveg kiértékelésénél csak a szöveget kitesszük a kimenetre.
+  \begin{minted}{hakell}
+evalPageItem (If c thn els) = do
+  b <- evalCond c
+  mapM_ evalPageItem (if b then thn else els)
+  \end{minted}
+  Elágazás esetén előbb kiértékeljük a feltételt. Amennyiben igaz,
+  akkor a then ágra megyünk, ellenkező esetben az else ágra.
+  \begin{minted}{haskell}
+evalPageItem (Goto capitalize pageNum) = do
+  emit [OutLink (PageLink pageNum) $ unwords [if capitalize then
+      "Lapozz" else "lapozz", if the then "a" else "az", show pageNum
+      ++ ".", "oldalra"]]
+  where the | pageNum `elem` [1, 5]  = False
+            | pageNum `elem` [2, 3, 4, 6, 7, 8, 9] = True
+            | pageNum < 50 = True
+            | pageNum < 60 = False
+            | otherwise = True
+  \end{minted}
+  Ennek a kiértékelésnek a hatására a kimenetbe kerül, hogy melyik
+  oldalon folytatódik a történet, hova lapozhat az olvasó.
+  \begin{minted}{haskell}
+evalPageItem (GotoLucky refYes refNo) = do
+  emit [outText "Tedd próbára SZERENCSÉDET!"]
+  d1 <- roll
+  d2 <- roll
+  luck <- getStat Luck
+  let page' | d1 + d2 <= luck = refYes
+            | otherwise = refNo
+  modifyStat pred Luck
+  evalPageItem (Goto True page')
+  \end{minted}
+  A Tedd próbára a szerencsédet utasítás. Először kiírjuk a kimenetre
+  hogy \emph{"Tedd próbára SZERENCSÉDET!"}. Majd két kockadobás következik (a
+  játék szabályai alapján). Összehasonlítjuk a \stat{szerencse
+  pontkainkkal}. Ha kockadobások összege kisebb vagy egyenlő, mint a
+  szerencse pontjaink, akkor szerencsések vagyunk, különben nem. Majd
+  a szerencsepontjainkból levonunk egyet. Végül kiírjuk, hogy honnan
+  folytatódik a történet.
+  \begin{minted}{hakell}
+evalPageItem (Inc counter) = modifyCounter succ counter
+evalPageItem (Dec counter) = modifyCounter pred counter
+evalPageItem (Clear counter) = modifyCounter (const 0) counter
+evalPageItem (Take item) = takeItem item
+evalPageItem (Drop item) = dropItem item
+evalPageItem (Damage stat expr) = do
+  value <- evalExpr expr
+  modifyStat (\x -> x - value) stat
+evalPageItem (Heal stat expr) = do
+  value <- evalExpr expr
+  modifyStat (+value) stat
+evalPageItem (Set flag) = setFlag flag
+  \end{minted}
+  Ezek az oldal részletek a monád állapotát változtatják.
+  \begin{minted}{haskell}
+evalPageItem (DieDef name) = do
+  n <- roll
+  addDice name n
+  \end{minted}
+  A kockadobás kiértékelésénél előbb dobunk, mellyel kapunk egy
+  véletlen számot. Majd a monád állapotába elmentjük ezt az értéket.
+  \begin{minted}{haskell}
+evalPageItem (Fight enemies) = do
+  is <- asks snd
+  let fs = FS { fight_enemies = enemies,
+                fight_last_round = Nothing,
+                fight_cont = is }
+  modify $ \gs -> gs{ fight_state = Just fs }
+  emit [OutLink StartFightLink "Harcolj!", OutBreak]
+  throwError FightEvent
+  \end{minted}
+  Csata kezdetén egy új csata állapotot hozunk létre és állítunk be a
+  játék állapotában, ahol az ellenségeket most kaptuk meg, és a
+  folytatás pedig a csata utáni rész. Ezt azért csináltam így, mert
+  amikor egy ellenséggel találkozik a hősünk, akkor nem akarom,
+  hogy tudja, hogy az adott oldal hogyan folytatódik, mert például ne
+  tudjon harc nélkül a következő oldalra menni. Csak akkor jelennek
+  meg az oldal további részei, amikor már legyőzte a szörnyet vagy
+  szörnyeket. Így a folytatást félretesszük az állatpotba és majd
+  akkor folytatjuk, ha a harc véget ért pozitív kimenettel a hős számára.
   
-    \subsection{Megjelenítés}
+  \subsection{Megjelenítés}
 \end{document}
