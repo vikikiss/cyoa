@@ -178,13 +178,13 @@ evalPageItem (Clear counter) = modifyCounter (const 0) counter
 evalPageItem (Take item) = takeItem item
 evalPageItem (Drop item) = dropItem item
 evalPageItem (GotoLucky refYes refNo) = do
+  emit [outText "Tedd próbára SZERENCSÉDET!"]
   d1 <- roll
   d2 <- roll
   luck <- getStat Luck
   let page' | d1 + d2 <= luck = refYes
             | otherwise = refNo
   modifyStat pred Luck
-  emit [outText "Tedd próbára SZERENCSÉDET!", OutDie d1, OutDie d2]
   evalPageItem (Goto True page')
 evalPageItem (Damage stat expr) = do
   value <- evalExpr expr
