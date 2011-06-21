@@ -627,7 +627,8 @@ elkülönül egymástól a motor és a megjelenítés.
     elérkezünk egy új oldalra, akkor csak le kell kérdezni az
     aktuálisat. A Writer monádba kerül a kimenet, amely egy további
     algebrai adattípus. A State monád pedig egy játék állapotot ír le.
-    Az IO monádra a kiírás miatt van szükség.
+    Az IO monádra a véletlenszám generálásakor van szükség. A
+    kockadobásnál generálunk egy számot 1 és 6 között.
     \begin{minted}{haskell}
     newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent
       (RWST (Array PageNum Page, [PageItem])
@@ -779,13 +780,55 @@ die = do
     definiál egy konkrét étrékkel. A clearDice kitörli az eddigi kockadobásokat.
 
       \subsubsection{Engine.hs}
+      Ebben a modulban kifejezéseket, feltételeket értékelünk ki, és
+      előállítjuk azt a kimenetet, amelyet majd a későbbiekben fel
+      lehet dolgozni.
+
+      Maga a kimenet egy algebrai adattípus, amelyben azt fogalmaztam
+      meg, hogy mikre kell felkészülnünk kimenet készítésekor.
+      \begin{minted}{haskell}
+data OutputAttr = Good
+                | Bad
+                deriving Show
+data OutputItem = OutText (Maybe OutputAttr) String
+                | OutDie Int
+                | OutLink Link String
+                | OutEnemies [Enemy]
+                | OutBreak
+                | OutImage ImageId
+
+data outText = OutText Nothing
+      \end{minted}
+      Az OutputItem-ben írtam le, hogy miket akarok közölni a
+      kimenettel kapcsolatban. Az OutText egy szöveg kiírására
+      szolgál. Van egy Maybe OutputAttr attribútuma, ami annyit
+      jelent, hogy jó vagy rossz dologot szeretnék közölni a játékos
+      szempontjából. Rossz, ha őt sebezték, jó, ha ő sebzett egy
+      csatában. De ez az attribútum opcionális.
+
+      Az OutDie segítségével írok ki a kimenetre egy kockadobást. Az
+      Int tartalmazza az értéket.
+
+      Az OutLink segítségével teszem ki az oldalra azokat a linkeket,
+      amelley a továbbhaladást akarom közölni.
+
+      Az OutEnemies mondja meg, hogy milyen ellenfelekkel kell
+      megküzdenie a hősnek. A paramétere egy lista, amely az
+      ellenfeleket tartalmazza, mert lehet egy vagy több ellenfél is
+      egyszerre.
+
+      Az OutBreak sortörésre közlésére szolgál.
+
+      Az OutImage segítségével lehet megmondani, hogy ennek az
+      oldalnak van image attribútuma, így majd változtatni kell a képen.
+
       \begin{minted}{haskell}
 evalExpr :: (Monad m, Functor m) => Expr -> CyoaT m Int
 evalExpr (ELiteral n) = return n
 evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
 evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
 evalExpr (e :*: f) = (*) <$> evalExpr e <*> evalExpr f
-evalExpr (e :%: f) = mod <$> evalExpr e <*> evalExpr f
+evalExpr (e :\%: f) = mod <$> evalExpr e <*> evalExpr f
 evalExpr (DieRef die) = getDice die
 evalExpr (CounterRef counter) = getCounter counter
 evalExpr (StatQuery a) = getStat a
@@ -793,6 +836,9 @@ evalExpr (ECond cond thn els) = do
   b <- evalCond cond
   evalExpr (if b then thn else els)
       \end{minted}
+      Kifejezések kiértékelésére van az evalExpr
+      függvény. Kifejezéseink: +,-,*,%,kockadobás,gyűjés lekédezése,
+                                jellemző lekérdezése,if
 
   \begin{minted}{haskell}
 evalCond :: (Monad m, Functor m) => Cond -> CyoaT m Bool
@@ -808,5 +854,37 @@ evalCond (CNot c) = not <$> evalCond c
 evalCond (Carry item) = carries item
 evalCond (FlagSet flag) = flagSet flag
   \end{minted}
+  Feltételek kiértékelésére van az evalCond függvény. Feltételek: bool
+  literál, és, vagy, kisebb, kisebb vagy egyenlő, nagyobb, nagyobb
+  vagy egyenlő, egyenlő-e, van-e nálunk egy bizonyos tárgy,
+  megcsináltunk-e egy bizonyos dolgot.
+
+  \begin{minted}{haskell}
+evalPage :: (Functor m, MonadIO m) => CyoaT m ()
+evalPage = do
+  fightState <- gets fight_state
+  case fightState of
+    Nothing -> do
+      pageNum <- gets $ player_page . player_state
+      (Page _ image pageType is) <- asks $ (!pageNum) . fst
+      tell $ OutputClear (show pageNum ++ ".") []
+      case image of
+        Just image -> emit [OutImage image]
+        Nothing -> return ()
+      evalPageItems is
+      case pageType of
+        WinPage -> throwError WinEvent
+        DeathPage -> throwError DeathEvent
+        NormalPage -> return ()
+    Just fs -> do
+      fight
+  \end{minted}
+  Egy oldal kiértékelésénel az az első kérdés, hogy csatában
+  vagyunk-e, vagyis, hogy ez egy folyatás vagy egy új oldal. Ha igen,
+  akkor a fight függvény jön. Ha nem, akkor az állapotból lekérdezzük
+  az oldalszámot, ahová érkeztünk, és kiírjuk. Amennyiben van image
+  attribútuma, azt közöljük a kimenetre (amely a korábban említett
+  algebrai adattípussal ábrázoltam.
+  
     \subsection{Megjelenítés}
 \end{document}
