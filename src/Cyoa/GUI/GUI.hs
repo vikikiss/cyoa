@@ -15,6 +15,7 @@ import Cyoa.Engine
 import Cyoa.PageLang
 import Cyoa.Monad
 
+import Paths_Cyoa
 import System.Environment
 import System.Exit
 import System.IO
@@ -117,7 +118,8 @@ main = do
   pages <- case args of
     [filename] -> parsePages filename
     otherwise  -> do
-      hPutStrLn stderr "Usage: helloworld <file.xml>"
+      self <- getProgName
+      hPutStrLn stderr $ unwords ["Usage:", self, "<file.xml>"]
       exitWith $ ExitFailure 1
   writeIORef refPages pages
 
@@ -154,7 +156,8 @@ main = do
   statusbar <- statusbarNew
   let statusLabel icon = do
          hbox <- hBoxNew False 0
-         containerAdd hbox =<< imageNewFromFile icon -- TODO: more robust finding of icons
+         path <- getDataFileName icon
+         containerAdd hbox =<< imageNewFromFile path
          label <- labelNew Nothing
          containerAdd hbox label
          boxPackStart statusbar hbox PackNatural 0
@@ -204,8 +207,12 @@ render (OutputContinue outItems) = do
     where
       display (OutBreak:os) = insertTextToBuf "\n" >> display os
       display ((OutEnemies enemies):os) = do
-        forM_ enemies $ \enemy -> do
-          display [OutText Nothing (show enemy), OutBreak]
+        forM_ enemies $ \(Enemy name agility health) -> do
+          display [ OutText Nothing $ unwords [name, "\t"
+                                              , "Ügyesség:", show agility
+                                              , "Életerő:", show health
+                                              ]
+                  , OutBreak]
         display os
       display ((OutText a s):os) = do
         buf <- asks gui_buf

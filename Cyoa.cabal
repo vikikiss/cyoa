@@ -43,6 +43,11 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 
 
+data-dir: pictures
+data-files: heart_icon.png
+            luck_icon.png
+            sword_icon.png
+            
 Executable cyoa-gtk
   hs-source-dirs: src
   Main-is: Cyoa/GUI/GUI.hs
