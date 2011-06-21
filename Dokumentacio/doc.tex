@@ -20,9 +20,16 @@
 \definecolor{Keyword}{RGB}{180,82,205}
 \definecolor{Cons}{RGB}{0,139,0}
 
+\newcommand{\xtag}[1]{{\color{Tag}#1}}
+\newcommand{\xattr}[2]{{\color{Attr}#1}={\color{Value}''#2''}}
+
 \newcommand{\stat}{\textsc}
 \newcommand{\attr}{\emph}
 \newcommand{\proglang}{\texttt}
+
+\newcommand{\kif}{\emph{kif}}
+\newcommand{\felt}{\emph{felt}}
+\newcommand{\ut}{\emph{ut}}
 
 \begin{document}
 \input{title}
@@ -197,12 +204,10 @@ elkülönül egymástól a motor és a megjelenítés.
 
     \subsection{Oldal alapvető leírása}
       \begin{itemize}
-        \item <{\color{Tag}book}> <{\color{Tag}/book}> : Gyökér jelölő.
+        \item <\xtag{book}> <\xtag{/book}> : Gyökér jelölő.
 
-        \item <{\color{Tag}page}
-          {\color{Attr}id}={\color{Value}''400''}
-          {\color{Attr}win}={\color{Value}''1''}>
-          <{\color{Tag}/page}>: A könyv oldalakból tevődik
+        \item <\xtag{page} \xattr{id}{400} \xattr{win}{1}>
+          <\xtag{/page}>: A könyv oldalakból tevődik
           össze. Minden új oldal egy ilyen jelölőbe
           kerül. Attribútumai: \attr{id}, \attr{death}, \attr{win}.
           Az \attr{id} attribútum kötelező, ez mondja meg, hogy
@@ -215,7 +220,7 @@ elkülönül egymástól a motor és a megjelenítés.
           céljához, tehát győzött. A nyitó csukó jelölők közé további
           jelölők jönnek.
           
-        \item <{\color{Tag}p}> <{\color{Tag}/p}> : bekezdést jelöl, tehát ennek a
+        \item <\xtag{p}> <\xtag{/p}> : bekezdést jelöl, tehát ennek a
           segítségével tudjuk a szöveget tagolni, hogy átláthatóbb,
           olvashatóbb legyen. Így a nyitó és záró jelölő közé főként
           szöveg kerül, de lehetnek további jelölők is.
@@ -223,166 +228,156 @@ elkülönül egymástól a motor és a megjelenítés.
       
     \subsection{Események}
       \begin{itemize}
-        \item <{\color{Tag}dice} {\color{Attr}name}={\color{Value}''d''}/>
-          : Kockadobás. A \attr{name} attribútum a kocka nevét jelöli, mert
-          esetenként több kockadobásra is szükségünk van. Tehát meg kell
-          tudnunk különböztetni őket.
+        \item <\xtag{dice} \attr{name}{d}/>
+          : Kockadobás. A \attr{name} attribútum a kocka nevét jelöli,
+          mert esetenként több kockadobásra is szükségünk van. Tehát
+          meg kell tudnunk különböztetni őket.
     
-        \item <{\color{Tag}take}
-          {\color{Attr}item}={\color{Value}''item''}/> : Eszköz
-          felvétele. Kalandunk során számon kell tartanunk, hogy milyen
-          eszközökre tettünk szert. Ezekre leginkább a későbbiekben lesz
-          szükségünk. Elérkezhetünk egy olyan megmérettetéshez, melynek
-          sikeressége az adott tárgy birtoklásán múlhat.
+        \item <\xtag{take} \xattr{item}{\emph{tárgy}}/>          
+          : Eszköz felvétele. Kalandunk során számon kell tartanunk,
+          hogy milyen eszközökre tettünk szert. Ezekre leginkább a
+          későbbiekben lesz szükségünk. Elérkezhetünk egy olyan
+          megmérettetéshez, melynek sikeressége az adott tárgy
+          birtoklásán múlhat.
     
-        \item <{\color{Tag}drop}
-          {\color{Attr}item}={\color{Value}''item''}/> : Tárgy eldobása,
-          felhasználása. Ha felhasználunk egy korábban megszerzett
-          tárgyat, de az már a későbbiekben nem marad nálunk, akkor
-          használjuk ezt a jelölőt.
+        \item <\xtag{drop} \xattr{item}{tárgy}/>          
+          : Tárgy eldobása, felhasználása. Ha felhasználunk egy
+          korábban megszerzett tárgyat, de az már a későbbiekben nem
+          marad nálunk, akkor használjuk ezt a jelölőt.
     
-        \item <{\color{Tag}set-flag}
-          {\color{Attr}flag}={\color{Value}''flag''}/> : Szükségünk
-          lehet arra is, hogy megjegyezzünk olyan dolgokat, hogy már
-          megtörtént velünk valami, pl. jártunk már egy bizonyos
-          helyen. A későbbiekben lehet erre utaló kérdés, mely
-          befolyásolhatja utunkat.
+        \item <\xtag{set-flag} \xattr{flag}{flag}/>
+          : Szükségünk lehet arra is, hogy megjegyezzünk olyan
+          dolgokat, hogy már megtörtént velünk valami, pl. jártunk már
+          egy bizonyos helyen. A későbbiekben lehet erre utaló kérdés,
+          mely befolyásolhatja utunkat.
           
-        \item <{\color{Tag}heal}
-          {\color{Attr}stat}={\color{Value}''stat}''>
-          <{\color{Tag}intlit} {\color{Attr}value}={\color{Value}''1''}>
-          <{\color{Tag}/heal}> : A stat attribútum által meghatározott
-          jellemzőnk(\stat{életerő}, \stat{ügyesség}, \stat{szerencse})
+        \item <\xtag{heal} \xattr{stat}{\emph{stat}}>\kif<\xtag{/heal}>
+          : A \emph{stat} attribútum által meghatározott
+          jellemzőnk(\stat{életerő}, \stat{ügyesség} vagy \stat{szerencse})
           növelése. Annyival nő az értéke, amennyi a nyitó és záró
-          jelölő közötti érték.
+          jelölő közötti kifejezés értéke.
           
-        \item <{\color{Tag}damage}
-          {\color{Attr}stat}={\color{Value}''health''}>
-          <{\color{Tag}intlit} {\color{Attr}value}={\color{Value}''1''}>
-          <{\color{Tag}/damage}> : A stat attribútum által meghatározott
+        \item <\xtag{damage} \xattr{stat}{\emph{stat}}>\kif<\xtag{/heal}>
+          : A \emph{stat} attribútum által meghatározott
           jellemzőnk(\stat{életerő}, \stat{ügyesség}, \stat{szerencse})
-          csökkenése. Annyival lesz kevesebb az értéke, amennyi a nyitó
-          es záró jelölő közötti érték.
+          csökkentése. Annyival lesz kevesebb az értéke, amennyi a nyitó
+          es záró jelölő közötti kifejezés értéke.
     
-        \item <{\color{Tag}inc}
-          {\color{Attr}counter}={\color{Value}''item''}/> : Lehet az a
-          feladatunk a kaland során, hogy egy adott tárgyból össze kell
-          gyűjtenünk többet. Ennek a segítségével tudjuk az adott eszköz
-          számát nyilvántartanunk, tehát ha találunk egy újabbat, akkor
-          csak annyit jegyzünk meg, hogy találtunk még egyet.
+        \item <\xtag{inc} \xattr{counter}{\emph{számláló}}/> 
+          : Lehet az a feladatunk a kaland során, hogy egy adott
+          tárgyból össze kell gyűjtenünk többet. Ennek a segítségével
+          tudjuk az adott eszköz számát nyilvántartanunk, tehát ha
+          találunk egy újabbat, akkor csak annyit jegyzünk meg, hogy
+          találtunk még egyet.
           
-        \item <{\color{Tag}dec}
-          {\color{Attr}counter}={\color{Value}''item''}/> : Hasonlóan az
-          előző jelölőhöz, ez arra szolgál, amikor a gyűjtött dologból
-          elveszítünk vagy felhasználunk egyet.
+        \item <\xtag{dec} \xattr{counter}{\emph{számláló}}/>           
+          : Hasonlóan az előző jelölőhöz, ez arra szolgál, amikor a
+          gyűjtött dologból elveszítünk vagy felhasználunk egyet.
+
+        \item <\xtag{clear} \xattr{counter}{\emph{számláló}}/>            
+          : A gyűjtött tárgyakat elveszítjük, azaz a száma 0 lesz.
       \end{itemize}
 
     \subsection{Vezélési szerkezetek}
       \subsubsection{Feltételek}
         \begin{itemize}
-          \item <{\color{Tag}lt}> <{\color{Tag}/lt}> : <. (Kisebb.) Binér
+          \item <\xtag{lt}>\kif$_1$ \kif$_2$<\xtag{/lt}> : $<$. (Kisebb.) Binér
             reláció, tehát két argumentuma van. Igaz értékkel tér vissza,
             ha az első argumentum kisebb, mint a második. Az argumentumai
             lehetnek változóhivatkozások, számliterálok.
             
-          \item <{\color{Tag}le}> <{\color{Tag}/le}> : <=. (Kisebb vagy
+          \item <\xtag{le}>\kif$_1$ \kif$_2$<\xtag{/le}> : $\le$. (Kisebb vagy
             egyenlő.) Binér reláció. Igaz az értéke, ha az első argumentum
             kisebb vagy egyenlő, mint a második.
             
-          \item <{\color{Tag}gt}> <{\color{Tag}/gt}> : >. (Nagyobb.) Binér
+          \item <\xtag{gt}>\kif$_1$ \kif$_2$<\xtag{/gt}> : $>$. (Nagyobb.) Binér
             reláció. Igaz, ha az első argumentum nagyobb, mint a második.
             
-          \item <{\color{Tag}ge}> <{\color{Tag}/gt}> : >=. (Nagyobb vagy
+          \item <\xtag{ge}>\kif$_1$ \kif$_2$<\xtag{/gt}> : $\ge$. (Nagyobb vagy
             egyenlő.) Binér reláció. Igaz, ha az első argumentuma nagyobb
             vagy egyenlő, mint a második.
             
-          \item <{\color{Tag}eq}> <{\color{Tag}/eq}> : ==. (Egyenlő.)
+          \item <\xtag{eq}>\kif$_1$ \kif$_2$<\xtag{/eq}> : $=$. (Egyenlő.)
             Binér reláció. Igaz, ha a két argumentuma egyenlő.
             
-          \item <{\color{Tag}and}> <{\color{Tag}/and}> : És. Argumentumai
+          \item <\xtag{and}>\felt$_1$ \felt$_2$<\xtag{/and}> : És. Argumentumai
             logikai értékek. Igaz értékkel tér vissza, ha minden
             argumentumának értéke igaz, különben hamis értekkel.
             
-          \item <{\color{Tag}or}> <{\color{Tag}/or}> : Vagy. Argumentumai
+          \item <\xtag{or}>\felt$_1$ \felt$_2$ <\xtag{/or}> : Vagy. Argumentumai
             logikai értékek. Igaz értékkel tér vissza, ha van olyan
             argumentuma, amelynek értéke igaz, különben hamissal.
             
-          \item <{\color{Tag}not}> <{\color{Tag}/not}> : Negáció. Egy
+          \item <\xtag{not}>\felt<\xtag{/not}> : Negáció. Egy
             argumentuma van, mely egy logikai érték. Igazhoz hamisat,
             hamishoz igazat rendel.
-          \item <{\color{Tag}carry}
-            {\color{Attr}item}={\color{Value}''item''}/> : Rendelkezünk-e az
+          \item <\xtag{carry} \xattr{item}{\emph{tárgy}}/>
+            : Rendelkezünk-e az
             adott tárggyal. Amennyiben igen, akkor az értéke igaz,
             ellenkező esetben hamis.
             
-          \item <{\color{Tag}score}
-            {\color{Attr}stat}={\color{Value}''stat''}/> : A \attr{stat}
+          \item <\xtag{score} \xattr{stat}{\emph{stat}}/>
+            : A \attr{stat}
             attribútumban meghatározott jellemzőnk lekérdezése.
         \end{itemize}
 
       \subsubsection{Kifejezések}
         \begin{itemize}
-          \item <{\color{Tag}cond}> <{\color{Tag}/cond}> : Feltétel. Három
+          \item <\xtag{cond}>\felt \kif$_1$ \kif$_2$<\xtag{/cond}> : Feltétel. Három
             argumentuma van. Amennyiben az első argumentum értéke igaz,
             akkor a második argumentumra kerül a vezérlés, különben a
             harmadikra.
-          \item <{\color{Tag}var} {\color{Attr}ref}={\color{Value}''d''}/>
+          \item <\xtag{var} \xattr{ref}{d}/>
             : Változóhivatkozás. A \emph{d} változó értékét adja
-            vissza. Az előző jelölőnél megadtuk a kockadobás nevét és
+            vissza. A <\xtag{dice}/> jelölőnél megadtuk a kockadobás nevét és
             értékét, mely értékre később szükégünk van, hogy például
             összehasoníthassuk más értékkel. Ennek a jelölőnek a
             segítségével tehetjük ezt meg.
             
-          \item <{\color{Tag}intlit}
-            {\color{Attr}value}={\color{Value}''5''}/> : Számliterál. A
+          \item <\xtag{intlit} \xattr{value}{$n$}/>
+            : Számliterál. A
             \attr{value} attribútumban kapott szám az értéke.
     
+          \item <\xtag{plus}>\kif$_1$ \kif$_2$<\xtag{/plus}> : Két argumentuma
+            van, visszaadja ezeknek az attribútumoknak az összegét.
+
+          \item <\xtag{counter}
+            {\color{Attr}name}={\color{Value}''item''}/> : A \attr{name}
+            attribútumban meghatározott tárgy számát adja meg, azaz hogy
+            mennyit sikerült összegyűjtenünk belőle.
+            
         \end{itemize}
 
-      \subsubsection{Utasítás}
+      \subsubsection{Utasítások}
         \begin{itemize}
-          \item <{\color{Tag}if}> <{\color{Tag}/if}> : Elágazás. Van egy
+          \item <\xtag{if}>\felt \ut$_1$ \ut$_2$<\xtag{/if}> : Elágazás. Van egy
             feltétele, melynek teljesülése esetén az igaz ágra kerül a
             vezérlés, különben a hamis ágra. Lehetséges az is, hogy nincs
             hamis ág. Ebben az esetben, ha a feltétel nem teljesül, akkor
             a következő jelölővel folytatódik a történet.  pl:
 
-          \item <{\color{Tag}text}> <{\color{Tag}/text}>: Szöveg
+          \item <\xtag{text}>\emph{szöveg}<\xtag{/text}>: Szöveg
             kiiratása. Nem új bekezdésben folytatódik a szöveg, hanem az
             adott sorban.
-
-          \item <{\color{Tag}plus}> <{\color{Tag}/plus}> : Két argumentuma
-            van, visszaadja ezeknek az attribútumoknak az összegét.
-
-          \item <{\color{Tag}counter}
-            {\color{Attr}name}={\color{Value}''item''}/> : A \attr{name}
-            attribútumban meghatározott tárgy számát adja meg, azaz hogy
-            mennyit sikerült összegyűjtenünk belőle.
-            
-          \item <{\color{Tag}clear}
-            {\color{Attr}counter}={\color{Value}''item''}/> : A gyűjtött
-            tárgyakat elveszítjük, azaz a száma 0 lesz.
       \end{itemize}
 
             
     \subsection{Interakció}
       \begin{itemize}
-        \item <{\color{Tag}goto}
-          {\color{Attr}ref}={\color{Value}''2''}/> : Az adott oldal
-          befejeztével hová tudunk továbbmenni. A \attr{ref} attribútum
-          mondja meg, hogy hol folytathatjuk kalandunkat. Ennek a
-          jelölőnek a hatása, hogy az oldalra kikerül a \emph{,,lapozz a
-            2. oldalra''} szöveg.
+        \item <\xtag{goto} \xattr{ref}{\emph{oldalszám}}/>          
+          : Az adott oldal befejeztével hová tudunk továbbmenni. A
+          \attr{ref} attribútum mondja meg, hogy hol folytathatjuk
+          kalandunkat. Ennek a jelölőnek a hatása, hogy az oldalra
+          kikerül a \emph{,,lapozz a 2. oldalra''} szöveg.
     
-        \item <{\color{Tag}Goto}
-          {\color{Attr}ref}={\color{Value}''2''}/> : Hasonló az
-          előzőhöz. A különbség köztük, hogy míg az előző jelölőt egy
-          mondat közepén vagy végén használjuk, addig ez egy új mondatot
-          állít elő a kimenetben. \emph{,,Lapozz a 2. oldalra.''}
+        \item <\xtag{Goto} \xattr{ref}{\emph{oldalszám}}/>          
+          : Hasonló az előzőhöz. A különbség köztük, hogy míg az
+          előző jelölőt egy mondat közepén vagy végén használjuk,
+          addig ez egy új mondatot állít elő a
+          kimenetben. \emph{,,Lapozz a 2. oldalra.''}
     
-        \item <{\color{Tag}goto-lucky}
-          {\color{Attr}refYes}={\color{Value}''135''}
-          {\color{Attr}refNo}={\color{Value}''273''}/> : Tedd próbára a
+        \item <\xtag{goto-lucky} \xattr{refYes}{135} \xattr{refNo}{273}/>
+          : Tedd próbára a
           szerencsédet!. Attribútumai: \attr{refYes}, \attr{refNo}. Két
           kockadobásra van szükségünk. Amennyiben a kockadobások
           szerencsét hoztak nekünk, akkor a \attr{refYes} attribútum
@@ -390,17 +385,14 @@ elkülönül egymástól a motor és a megjelenítés.
           \attr{refNo} attribútum mondja meg, hogy kalandunk merre
           folytatódjon.
 
-        \item <{\color{Tag}enemy}
-          {\color{Attr}agility}={\color{Value}''10''}
-          {\color{Attr}health}={\color{Value}''8''}> </enemy> : Az
-          ellenfél, akivel harcolnunk kell. Az attribútumai megadják a
-          lény \stat{ügyességét} és \stat{ételerejét}. A jelölők közti
-          szöveg, pedig a nevét.
-
-        \item <{\color{Tag}f{}ight}> <{\color{Tag}/f{}ight}> : Harc egy
+        \item <\xtag{f{}ight}> <\xtag{/f{}ight}> : Harc egy
           mesebeli lénnyel. A nyitó és csukó jelölők között egy vagy
-          több <{\color{Tag}enemy}> szerepel, attól függ, hogy hány ellenféllel
+          több <\xtag{enemy}> szerepel, attól függ, hogy hány ellenféllel
           kell megküzdeni.
+        \item <\xtag{enemy} \xattr{agility}{10} \xattr{health}{8}>Ogre<\xtag{/enemy}>
+          : Az ellenfél, akivel harcolnunk kell. Az attribútumai
+          megadják a lény \stat{ügyességét} és \stat{ételerejét}. A
+          jelölők közti szöveg, pedig a nevét.
       \end{itemize}
       
     \subsection{Példák}
@@ -417,11 +409,11 @@ elkülönül egymástól a motor és a megjelenítés.
 </page>
       \end{minted}
       Ez a példa azt mutatja be, hogy hogyan épül fel egy egyszerű
-      oldal. Kívül található a <{\color{Tag}page}> jelölő, amely egy
+      oldal. Kívül található a <\xtag{page}> jelölő, amely egy
       oldalt hivatott leírni. \attr{Id} attribútuma azt jelenti, hogy a
-      7. oldalon vagyunk. Ezen belül <{\color{Tag}p}> jelölőben
+      7. oldalon vagyunk. Ezen belül <\xtag{p}> jelölőben
       található a történet szövege. Végül az oldal befejezését jelző
-      <{\color{Tag}goto}>, amelyben a lehetséges folyatásokat írjuk
+      <\xtag{goto}>, amelyben a lehetséges folyatásokat írjuk
       le.
       \item Kockadobás
       
@@ -453,28 +445,28 @@ elkülönül egymástól a motor és a megjelenítés.
         dobunk két kockával, és amennyiben az összegük kisebb vagy
         egyenlő, mint a kalandor ügyességi pontja, akkor a 66-os oldalon
         folytathatja a történetét, különben a 334-en.\\
-        A <{\color{Tag}dice}> jelölő a
+        A <\xtag{dice}> jelölő a
         kockadobást jelenti, ahol a két kockánk a \emph{d1} és \emph{d2}. A névre majd
-        a hivatkozásnál lesz szükségünk. Majd egy <{\color{Tag}if}> elágazás
-        következik, ahol az <{\color{Tag}le}> jelölővel megnézzük, hogy az első
+        a hivatkozásnál lesz szükségünk. Majd egy <\xtag{if}> elágazás
+        következik, ahol az <\xtag{le}> jelölővel megnézzük, hogy az első
         argumentum kisebb vagy egyenlő-e, mint a második. Az első
-        argumentum összetett, egy <{\color{Tag}plus}> található benne, melynek
+        argumentum összetett, egy <\xtag{plus}> található benne, melynek
         jelentése, hogy a két kapott argumetumot összeadjuk. A két
         argumentum 1-1 változóhivatkozás, azaz az előbb kapott két
-        kockadobás eredménye, melyet a <{\color{Tag}var}> jelölővel kérdezünk
-        le. Utána következik az <{\color{Tag}if}> második argumentuma, amelyben
-        lekérdezzük kalandorunk ügyességi pontjait a <{\color{Tag}score}> jelölő
-        segítségével. Majd következik az <{\color{Tag}if}> igaz és hamis ága, melyben
-        <{\color{Tag}text}> jelölővel szöveget iratunk ki.
+        kockadobás eredménye, melyet a <\xtag{var}> jelölővel kérdezünk
+        le. Utána következik az <\xtag{if}> második argumentuma, amelyben
+        lekérdezzük kalandorunk ügyességi pontjait a <\xtag{score}> jelölő
+        segítségével. Majd következik az <\xtag{if}> igaz és hamis ága, melyben
+        <\xtag{text}> jelölővel szöveget iratunk ki.
       
       \item Csata
       
         Ebben a példában egy csata leírása látható. A
-        <{\color{Tag}fight}> jelölők közé jönnek az
-        <{\color{Tag}enemy}> jelölők. A <{\color{Tag}fight}> a csatát
-        jelenti. Az <{\color{Tag}enemy}> pedig az ellenfelet. Itt csak egy ellenfél
+        <\xtag{fight}> jelölők közé jönnek az
+        <\xtag{enemy}> jelölők. A <\xtag{fight}> a csatát
+        jelenti. Az <\xtag{enemy}> pedig az ellenfelet. Itt csak egy ellenfél
         található, de ha több lénnyel kell megküzdenie hősünknek,
-        akkor az <{\color{Tag}enemy}> jelölők száma nő.
+        akkor az <\xtag{enemy}> jelölők száma nő.
         \begin{minted}{xml}
 <fight>
   <enemy agility="9" health="10">Ogre</enemy>
@@ -483,14 +475,14 @@ elkülönül egymástól a motor és a megjelenítés.
 
       \item Pontok vesztése, visszaszerzése
         Ebben a példában azt, hogy a hősünk nyer 1 \stat{életerő pontot} a
-        <{\color{Tag}heal}> jelölő segítségével írtam le. A \attr{stat}
+        <\xtag{heal}> jelölő segítségével írtam le. A \attr{stat}
         attribútumában megadtam, hogy a életerő jellemző
         változtatásáról van tehát szó, és a nyitó és csukó jelölők közé írt
-        számmal növekszik az érték. Ehhez az <{\color{Tag}intlit}
+        számmal növekszik az érték. Ehhez az <\xtag{intlit}
         {\color{Attr}value}={\color{Value}''1''}> volt a segítségemre.
-        Hasonlóan írtam le a 2 \stat{ügyességi pont} elvésztését a <{\color{Tag}damage}>
+        Hasonlóan írtam le a 2 \stat{ügyességi pont} elvésztését a <\xtag{damage}>
         jelölővel. A \attr{stat} attribútumban megadtam az ügyesség
-        jellemzőt, és az <{\color{Tag}intlit}> segítségével pedig a számot,
+        jellemzőt, és az <\xtag{intlit}> segítségével pedig a számot,
         amennyivel csökkenteni szeretném az értéket.
         \begin{minted}{xml}
 <p>
