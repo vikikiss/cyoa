@@ -779,5 +779,34 @@ die = do
     definiál egy konkrét étrékkel. A clearDice kitörli az eddigi kockadobásokat.
 
       \subsubsection{Engine.hs}
+      \begin{minted}{haskell}
+evalExpr :: (Monad m, Functor m) => Expr -> CyoaT m Int
+evalExpr (ELiteral n) = return n
+evalExpr (e :+: f) = (+) <$> evalExpr e <*> evalExpr f
+evalExpr (e :-: f) = (-) <$> evalExpr e <*> evalExpr f
+evalExpr (e :*: f) = (*) <$> evalExpr e <*> evalExpr f
+evalExpr (e :%: f) = mod <$> evalExpr e <*> evalExpr f
+evalExpr (DieRef die) = getDice die
+evalExpr (CounterRef counter) = getCounter counter
+evalExpr (StatQuery a) = getStat a
+evalExpr (ECond cond thn els) = do
+  b <- evalCond cond
+  evalExpr (if b then thn else els)
+      \end{minted}
+
+  \begin{minted}{haskell}
+evalCond :: (Monad m, Functor m) => Cond -> CyoaT m Bool
+evalCond (CLiteral b) = return b
+evalCond (c :||: d) = (||) <$> evalCond c <*> evalCond d
+evalCond (c :&&: d) = (&&) <$> evalCond c <*> evalCond d
+evalCond (e :<: f) = (<) <$> evalExpr e <*> evalExpr f
+evalCond (e :<=: f) = (<=) <$> evalExpr e <*> evalExpr f
+evalCond (e :>: f) = (>) <$> evalExpr e <*> evalExpr f
+evalCond (e :>=: f) = (>=) <$> evalExpr e <*> evalExpr f
+evalCond (e :==: f) = (==) <$> evalExpr e <*> evalExpr f
+evalCond (CNot c) = not <$> evalCond c
+evalCond (Carry item) = carries item
+evalCond (FlagSet flag) = flagSet flag
+  \end{minted}
     \subsection{Megjelenítés}
 \end{document}
