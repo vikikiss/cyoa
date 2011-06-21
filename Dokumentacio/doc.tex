@@ -1,22 +1,21 @@
 \documentclass[12pt,a4paper,oneside]{report}
 
 \usepackage{txfonts}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
+% \usepackage[utf8]{inputenc}
+% \usepackage[T1]{fontenc}
+\usepackage{ucs}
+\usepackage{fontspec}
 \usepackage[magyar]{babel}
 \usepackage{amssymb}
 \usepackage{paralist}
+\usepackage{minted}
+\usemintedstyle{vs}
 \usepackage{graphicx}
-\usepackage{listings}
-\lstset{language=XML, morekeywords={page, goto, dice, if, le, plus, var,
-    score, text, ref, stat, goto, p, fight, enemy, agility,
-    health, damage, heal, value, intlit, id},
-  backgroundcolor=\color{CodeBg}, frame=single}
-\usepackage[usenames,dvipsnames]{color}
+% \usepackage[usenames,dvipsnames]{color}
 
-\definecolor{Tag}{named}{NavyBlue}
+\definecolor{Tag}{RGB}{38,107,189}
 \definecolor{Attr}{RGB}{238,0,0}
-\definecolor{Value}{named}{OliveGreen}
+\definecolor{Value}{RGB}{59,125,37}
 \definecolor{CodeBg}{RGB}{232,232,232}
 \definecolor{Keyword}{RGB}{180,82,205}
 \definecolor{Cons}{RGB}{0,139,0}
@@ -407,19 +406,16 @@ elkülönül egymástól a motor és a megjelenítés.
     \subsection{Példák}
     \begin{itemize}
       \item Egyszerű oldal
-        \begin{lstlisting}
+        \begin{minted}{xml}
 <page id="7">
   <p>
-    Hamarosan egy ujabb ajtohoz ersz az alagutban.
-    A kilincs enged, de az ajtot keresztben
-    bedeszkaztak.
-    Ha le akarod fesziteni a deszkakat a
-    kardoddal - <goto ref="336"/>.
-    Ha inkabb tovabbmesz az alagutban -
-    <goto ref="45"/>.
-    </p>
+    Hamarosan egy újabb ajtóhoz érsz az alagútban.
+    A kilincs enged, de az ajtót keresztben bedeszkázták.
+    Ha le akarod feszíteni a deszkákat a kardoddal - <goto ref="336"/>.
+    Ha inkább továbbmész az alagútban - <goto ref="45"/>.
+  </p>
 </page>
-      \end{lstlisting}
+      \end{minted}
       Ez a példa azt mutatja be, hogy hogyan épül fel egy egyszerű
       oldal. Kívül található a <{\color{Tag}page}> jelölő, amely egy
       oldalt hivatott leírni. \attr{Id} attribútuma azt jelenti, hogy a
@@ -429,11 +425,9 @@ elkülönül egymástól a motor és a megjelenítés.
       le.
       \item Kockadobás
       
-        \begin{lstlisting}
+        \begin{minted}{xml}
 <p>
-  Dobj ket kockaval!
-  <dice name="d1"/>
-  <dice name="d2"/>
+  Dobj két kockával! <dice name="d1"/> <dice name="d2"/>
   <if>
     <le>
       <plus>
@@ -443,17 +437,16 @@ elkülönül egymástól a motor és a megjelenítés.
       <score stat="agility"/>
     </le>
     <text>
-      Ha a kapott osszeg ugyanannyi vagy kevesebb,
-      mint UGYESSEGI pontjaid szama -
-      <goto ref="66"/>.
+      Ha a kapott összeg ugyanannyi vagy kevesebb,
+      mint ÜGYESSÉGI pontjaid száma - <goto ref="66"/>.
     </text>
     <text>
-      Ha a kapott osszeg nagyobb, mint UGYESSEGI
-      pontjaid szama - <goto ref="334"/>.
+      Ha a kapott összeg nagyobb, mint ÜGYESSÉGI
+      pontjaid száma - <goto ref="334"/>.
     </text>
   </if>
 </p>
-        \end{lstlisting}
+        \end{minted}
         A kaland során lehet, hogy a véletlenre szeretnénk bízni, hogy
         hősünkkel mi történjen. Ennek megoldására szolgál a
         kockadobás. Ebben az összetett példában azt írtam le, hogy
@@ -482,11 +475,11 @@ elkülönül egymástól a motor és a megjelenítés.
         jelenti. Az <{\color{Tag}enemy}> pedig az ellenfelet. Itt csak egy ellenfél
         található, de ha több lénnyel kell megküzdenie hősünknek,
         akkor az <{\color{Tag}enemy}> jelölők száma nő.
-        \begin{lstlisting}
+        \begin{minted}{xml}
 <fight>
   <enemy agility="9" health="10">Ogre</enemy>
 </fight>
-        \end{lstlisting}
+        \end{minted}
 
       \item Pontok vesztése, visszaszerzése
         Ebben a példában azt, hogy a hősünk nyer 1 \stat{életerő pontot} a
@@ -499,22 +492,21 @@ elkülönül egymástól a motor és a megjelenítés.
         jelölővel. A \attr{stat} attribútumban megadtam az ügyesség
         jellemzőt, és az <{\color{Tag}intlit}> segítségével pedig a számot,
         amennyivel csökkenteni szeretném az értéket.
-        \begin{lstlisting}
+        \begin{minted}{xml}
 <p>
-  A szokokut hideg vize felfrissit, de furcsa
-  mellekhatasa van. Nyersz 1 ELETERO pontot,
+  A szökőkút hideg vize felfrissít, de furcsa mellékhatása van. 
+  Nyersz 1 ÉLETERŐ pontot,
   <heal stat="health">
     <intlit value="1"/>
   </heal>      
-  de vesztesz 2 UGYESSEGI pontot,
+  de vesztesz 2 ÜGYESSÉGI pontot,
   <damage stat="agility">
     <intlit value="2"/>
-    </damage>            
-  mert a viztol igen gyorsan megoregszel.
-  Elszantan mesz tovabb az alagutban -
-  <goto ref="329"/>.
+  </damage>            
+  mert a víztől igen gyorsan megöregszel.
+  Elszántan mész tovább az alagútban - <goto ref="329"/>.
 </p>
-        \end{lstlisting}
+        \end{minted}
     \end{itemize}
     
   \section{Fejlesztői dokumentáció}
