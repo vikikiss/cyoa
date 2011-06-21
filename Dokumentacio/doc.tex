@@ -514,6 +514,7 @@ elkülönül egymástól a motor és a megjelenítés.
     későbbiekben fel akarjuk használni. Tehát szükségünk van valamilyen
     állapotra, mely folyamatosan módosul, és melyet lekérdezhetünk
     időről időre.
+    \subsection{Játék állapota}
     Ezt az állapotot egy algebrai adattípussal írtam le, mely az
     alábbi:
     \begin{minted}{haskell}
@@ -533,11 +534,12 @@ elkülönül egymástól a motor és a megjelenítés.
     kérdezni az eredményét, mert ez befolyásolja kalandunk további
     kimenetét az adott oldalon.
     
-    A játékos állapota: Kaland írásánál, kitalálásánál, hogy a
-    történet minél színesebb, fordulatosabb legyen, sok információt
-    kell eltárolnunk. Ilyen információ, hogy milyen eszközöket viszünk
-    magunkkal kezdetben, vagy miket találtunk eddig az út során.  Ezt
-    tárolja a player\_carries nevű mező az állapotban.
+    \subsection{A játékos állapota}
+    Kaland írásánál, kitalálásánál, hogy a történet minél színesebb,
+    fordulatosabb legyen, sok információt kell eltárolnunk. Ilyen
+    információ, hogy milyen eszközöket viszünk magunkkal kezdetben,
+    vagy miket találtunk eddig az út során.  Ezt tárolja a
+    player\_carries nevű mező az állapotban.
 
     Vannak olyan események, melyeket nem lehet egyszerűen azzal
     leírni, hogy eltesszük, mint egy tárgyat. Például, hogy jártunk
@@ -581,12 +583,13 @@ elkülönül egymástól a motor és a megjelenítés.
                      deriving (Show, Read)
     \end{minted}
 
-    Harc/csata állapota: Egy csata folyamán előfordulhat, hogy csak egy
-    lénnyel kell megküzdenünk, de lehet az is, hogy többel. Ezért
-    itt el kell tárolnunk az összes ilyen mesebeli
-    szörnyet, akik arra várnak, hogy megtámadhassanak. A szabályok
-    szerint egyszerre csak lénnyel kell megküzdenünk, tehát egymás
-    után következnek. A szörnyek tárolása a fight\_enemies listában történik.
+    \subsection{Harc/csata állapota}
+    Egy csata folyamán előfordulhat, hogy csak egy lénnyel kell
+    megküzdenünk, de lehet az is, hogy többel. Ezért itt el kell
+    tárolnunk az összes ilyen mesebeli szörnyet, akik arra várnak,
+    hogy megtámadhassanak. A szabályok szerint egyszerre csak lénnyel
+    kell megküzdenünk, tehát egymás után következnek. A szörnyek
+    tárolása a fight\_enemies listában történik.
 
     Az implementáció miatt volt szükség feljegyeznem,
     hogy mi volt az előző forduló, ezt a fight\_last\_round teszi
@@ -611,17 +614,16 @@ elkülönül egymástól a motor és a megjelenítés.
                     deriving (Show, Read)
     \end{minted}
     
-    Monádok a háttérben: egy CyoaT nevű monád van a háttérben, mely
-    egy monád-interfészt húz az állapot kezelése fölé. Ez minden olyan
-    műveletet nyújt,
-    amivel meg lehet változtatni az állapotot.
-    Tehát a CyoaT monádom egy monádtranszformátor, melynek külseje
-    egy error monád, a belseje pedig egy RWST monádtranszformátor, ami
-    az IO monád fölött van. A Reader monádban tárolom a magukat az
-    oldalakat, és amikor elérkezünk egy új oldalra, akkor csak le kell
-    kérdezni az aktuálisat. A Writer monádba kerül a kimenet, amely
-    egy további algebrai adattípus. A State monád pedig egy játék
-    állapotot ír le.
+    \subsection{Monádok a háttérben}
+    Egy CyoaT nevű monád van a háttérben, mely egy monád-interfészt
+    húz az állapot kezelése fölé. Ez minden olyan műveletet nyújt,
+    amivel meg lehet változtatni az állapotot.  Tehát a CyoaT monádom
+    egy monádtranszformátor, melynek külseje egy error monád, a
+    belseje pedig egy RWST monádtranszformátor, ami az IO monád fölött
+    van. A Reader monádban tárolom a magukat az oldalakat, és amikor
+    elérkezünk egy új oldalra, akkor csak le kell kérdezni az
+    aktuálisat. A Writer monádba kerül a kimenet, amely egy további
+    algebrai adattípus. A State monád pedig egy játék állapotot ír le.
     Az IO monádra a kiírás miatt van szükség.
     \begin{minted}{haskell}
     newtype CyoaT m a = CyoaT { unCyoaT :: ErrorT GameEvent
@@ -634,7 +636,7 @@ elkülönül egymástól a motor és a megjelenítés.
             Applicative)
     \end{minted}
 
-    A monád műveletei:
+    \subsection{A monád műveletei}
     \begin{minted}{haskell}
 modifyPlayerState :: (Monad m) => (PlayerState -> PlayerState) -> CyoaT m ()
 modifyPlayerState f = modify $ \gs -> gs{ player_state = f (player_state gs) }
@@ -773,5 +775,6 @@ die = do
     kockának az értékét kérdezzük le. Az addDice egy új kockát
     definiál egy konkrét étrékkel. A clearDice kitörli az eddigi kockadobásokat.
 
+      \subsubsection{Engine.hs}
     \subsection{Megjelenítés}
 \end{document}
