@@ -226,6 +226,8 @@
         címkéjében található a dobás értéke. A pontok meghatározása az
         eredeti játékszabály alapján történik.
 
+        \includegraphics[scale=0.5]{screenshot_001.png}
+
         A jobb alsó sarokban mindig figyelemmel követhetjük, hogy
         hősünk milyen jellemzőkkel bír, mivel ez folyamatosan változik
         kalandról kalandra. A szív jelenti az \stat{életerőt}, a kard
@@ -234,6 +236,8 @@
         mutatja. Miután készen vagyunk ezen tulajdonságok
         meghatározásával, következhet az igazi kaland. Kapunk egy
         linket, melyre kattintva elkezdhetjük küldetésünk.
+
+        \includegraphics[scale=0.5]{screenshot_003.png}
 
         A további oldalak hasonlóan néznek ki. A jobb oldalon látható
         hősünk képe, mely csak akkor változik, amikor egy szörnnyel
@@ -246,12 +250,16 @@
         szeretné. Tehát a kék linkre kattintva lehet a következő
         oldalra menni.
 
+        \includegraphics[scale=0.5]{screenshot_005.png}
+
         Találkozhatunk a \emph{Tedd próbára a szerencsédet!}
         utasítással. Ekkor az a teendő, hogy két kockával kell dobni,
         majd attól függően, hogy szerencsések voltunk-e megjelenik a
         link, amerre utunkat folyatathatjuk. Itt én csak azt a linket
         tettem ki, mely vonatkozik a játékosra, hiszen a másik út
         számára nem releváns.
+
+        \includegraphics[scale=0.5]{screenshot_006.png}
 
         Amikor elérkezünk egy harchoz, előbb kapunk egy \emph{Harcolj!}
         linket, melyre kattintva jutunk el az összecsapásig. A
@@ -264,8 +272,12 @@
         linket, mely a továbbhaladást mutatja. Ellenkező esetben véget
         ér a játékunk.
 
-        Itt egy példa a csata elbukására.
+        \includegraphics[scale=0.5]{screenshot_011.png}
+
+        Itt egy példa a csata megnyerésére.
         
+        \includegraphics[scale=0.5]{screenshot_014.png}
+
       \subsection{Webes felület használata}
         Amikor elindítottuk a programunkat, akkor egy böngésző
         segítségével tudjuk a játékunkat elkezdeni a
@@ -1014,7 +1026,7 @@ evalPageItem (Paragraph is) = do
 evalPageItem (TextLit s) = emit [outText s]
   \end{minted}
   Szöveg kiértékelésénél csak a szöveget kitesszük a kimenetre.
-  \begin{minted}{hakell}
+  \begin{minted}{haskell}
 evalPageItem (If c thn els) = do
   b <- evalCond c
   mapM_ evalPageItem (if b then thn else els)
@@ -1052,7 +1064,7 @@ evalPageItem (GotoLucky refYes refNo) = do
   szerencse pontjaink, akkor szerencsések vagyunk, különben nem. Majd
   a szerencsepontjainkból levonunk egyet. Végül kiírjuk, hogy honnan
   folytatódik a történet.
-  \begin{minted}{hakell}
+  \begin{minted}{haskell}
 evalPageItem (Inc counter) = modifyCounter succ counter
 evalPageItem (Dec counter) = modifyCounter pred counter
 evalPageItem (Clear counter) = modifyCounter (const 0) counter
