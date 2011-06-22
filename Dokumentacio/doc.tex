@@ -1107,4 +1107,83 @@ evalPageItem (Fight enemies) = do
   akkor folytatjuk, ha a harc véget ért pozitív kimenettel a hős számára.
   
   \subsection{Megjelenítés}
+
+    \subsubsection{GTK}
+      A \proglang{Gtk2hs} nevű csomag segítségével készítettem ezt a grafikus
+      felhasználói felületet. Majdnem minden függvény meg van írva
+      \proglang{Haskell} nyelven, ami a \proglang{GTK}-ban szerepel. Így csak ezeket a
+      functionális nyelven megírt függvényeket kellett ugyanúgy
+      használnom, mintha \proglang{GTK}-t használnék.
+
+      A \emph{main} függvény ellenőrzi le, hogy a parancssori paramétereket
+      adtunk-e a programnak (az xml fajlt), itt hozom létre az
+      ablakot, itt állítottam be, hogy a szöveg amit kiír, milyen
+      legyen (a linkek kék színnel jelenjenek meg), egy görgetősávot
+      tettem függőlegesen (harcoknál vagy hosszabb szövegeknél szükség
+      van rá), alulra került egy állapotjelző (a játékos jellemzői ide
+      kerülnek, mely egy kép és mellette az érteke).
+
+      A display függvény dolgozza fel azt a kimenetet, amelyet a
+      motorban előállítottam.
+    \subsubsection{Yesod}
+      A \proglang{Yesod} nevű csomag segítégével írtam meg a webes
+      felületet. Mivel webes környezetben nincs állapot, ebben a
+      programban pedig számon tartunk néhány dolgot, melyet állapotként
+      fogalmaztunk meg, ezért sütik kezelésével oldottam meg ezt. A
+      sütiben a játék állapotát adom oldalról oldalra.
+
+      A routing táblában 3 út van. Az első a \emph{root}, a második a \emph{start}
+      (melynek segítségével bármikor új játékot lehet kezdeni, mert ez
+      egy új, üres állapotot állít elő), a harmadik a \emph{goto} amelynek
+      egy oldalszám a paramétere, hogy hanyadik oldalon tartunk. A
+      \emph{root} út arra szolgál, hogy elrejti azt az információt, hogy
+      melyik oldalon vagyunk, tehát, tényleg csak a sütiben van
+      információ az állapotról. Minden új oldalra kerülés után
+      átirányítjuk a játékost a \emph{root}-ra, melynek nincs oldalszám
+      paramétere. Különben könnyen csalni lehetne, hogy melyik oldalra
+      menjunk, mert csak beírnánk az oldalszámot.
+      \begin{minted}{haskell}
+mkYesod "CyoaWeb" [$parseRoutes|
+/ PRoot GET
+/start PStart GET
+/goto/#Link PGoto GET
+|]
+      \end{minted}
+      Az addCassius függvénnyel tudok css-t hozzáadni, melyben például
+      a linkek színét adtam meg.
+
+      A hamletToRepHtml függvény a html leírására szolgál.
+
+      A toHamlet függvénnyel állítottam elő azt a html kódot, amely
+      megmondja, hogy mit kell tenni a motor által előállított kimenettel.
+
+  
+  \subsection{Továbbfejlesztési lehetőségek}
+  \begin{itemize}
+    \item A programot tovább lehet színesíteni, csinosítani. A webes
+      felületre is ki lehetne írni azokat az információkat, mint a
+      grafikus felhasználói felületre.
+    \item Ki lehetne egészíteni, hogy a játékos megválaszthassa, hogy
+      milyen módban szeretne játszani. Lehetne egy könnyű mód, ami azt
+      jelenti, hogy ha a szerencsére van bízva a kalandjának
+      folytatása, akkor mindig a legkedvezőbb út jöjjön ki
+      továbbhaladási lehetőségként. Esetleg a csatában is nagy
+      százalékban a játékos sebezzen az ellenfelén.
+
+      Lehetne egy normál mód, amikor a szerencsét nem tudjuk
+      befolyásolni, de lehessen visszaféle is menni. Ha olyan helyre
+      értünk, ami számunkra kedvezőtlen, akkor legyen egy vissza gomb,
+      melynek megnyomásával oda kerülnénk vissza, ahonnan ide
+      jutottunk.
+
+      A nehéz mód az a mostani maradhatna.
+    \item A bemenő fájlra lehetne egy ellernőrző programot írni, hogy
+      a kezdeti oldalról valóban el lehet jutni minden más
+      oldalra. Egy gráfként lehetne ábrázolni és azt vizsgálni, hogy
+      az 1. oldalról, azaz a gyökérből vezet-e út minden más
+      oldalra. Továbbá, hogy létezik-e nyerő út, azaz el lehet-e jutni
+      a 400. oldalra a gyökérből.
+    \item Készíthetnénk belőle egy olyan játékot, mely elrugaszkodik a
+      könyvolvasás élményétől, kicsit modernebb lenne.
+  \end{itemize}
 \end{document}
