@@ -107,7 +107,7 @@
         Mielőtt elkezdünk egy játékot meg kell határoznunk a fent
         említett \stat{életerő}, \stat{szerencse} és \stat{ügyességi
         pontjainkat}. Ahhoz, hogy megkapjuk az \stat{ügyességi
-        pontainkat} dobjunk a dobókockával, majd a kapott számhoz
+        pontjainkat} dobjunk a dobókockával, majd a kapott számhoz
         adjunk hozzá 6-ot. Ugyanígy járjunk el a \stat{szerencse
         pontjaink} meghatározásához is. Hogy \stat{életerő
         pontjainkat} megtudjuk dobjunk két dobókockával és adjunk
@@ -207,11 +207,11 @@
 
       Két futtatható állományt készítettem hozzá, mert két
       felhasználását mutatom be a motor által készített kimenetnek. Az
-      egyik egy \proglang{GTK} segítségével készített grafikus felhasználói
-      felület. Ennek futtatása a {\bf cyoa-gtk <fájlnév>} paranccsal
-      történik. Egy másik felhasználását is be akartam mutatni a
-      kimenetemnek, mely webes környezetben fut. Ennek futtatására
-      a {\bf cyoa-yesod <fájlnév>} parancs van a segítségünkre. Az
+      egyik egy \proglang{GTK} segítségével készített grafikus
+      felhasználói felület. Ennek futtatása a {\bf cyoa-gtk <fájlnév>}
+      paranccsal történik. Egy másik felhasználását is be akartam
+      mutatni, mely webes környezetben fut. Ennek futtatására a {\bf
+        cyoa-yesod <fájlnév>} parancs van a segítségünkre. Az
       alábbiakban részletezem a két felhasználást.
 
       \subsection{Graf{}ikus felhasználói felület használata}
@@ -265,7 +265,7 @@
         linket, melyre kattintva jutunk el az összecsapásig. A
         kattintás után látjuk ellenfelünk tulajdonságait, hogy
         mennyire erős, ügyes. Itt körönként megy a harc. Ennek
-        leírását lásd a játékszabályoknál. A \stat{Dobj!} feliratú gombokra
+        leírását lásd a játékszabályoknál. A \emph{Dobj} feliratú gombokra
         kattintva érjük el a kockadobást, és a linkek segítségével
         dönthetjük el, hogy kockáztatni szeretnénk-e a körök
         végén. Amennyiben legyőzzük ellenfelünket, akkor megkapjuk a
@@ -282,7 +282,7 @@
         Amikor elindítottuk a programunkat, akkor egy böngésző
         segítségével tudjuk a játékunkat elkezdeni a
         http://localhost:3000/ elérési úton. Új játék kezdetéhez a
-        http://localhost:3000/start útat kell megadni.
+        http://localhost:3000/start utat kell megadni.
 
         A többi felhasználási javaslat ugyanaz, mint az előbbiben.
       
@@ -307,18 +307,21 @@ elkülönül egymástól a motor és a megjelenítés.
         \item <\xtag{book}> <\xtag{/book}> : Gyökér jelölő.
 
         \item <\xtag{page} \xattr{id}{400} \xattr{win}{1}>
-          <\xtag{/page}>: A könyv oldalakból tevődik
-          össze. Minden új oldal egy ilyen jelölőbe
-          kerül. Attribútumai: \attr{id}, \attr{death}, \attr{win}.
-          Az \attr{id} attribútum kötelező, ez mondja meg, hogy
-          hányadik oldalon vagyunk. A másik két attribútum csak
-          különleges helyzetekben szerepel. A \attr{death} attribútum
-          azt az információt hordozza magában, hogy az oldal, amire
-          érkeztünk olyan oldal, ahonnan nincs tovább vagyis a hős
-          kalandja itt véget ér, elbukta küldetését. Hasonlóan a
-          \attr{win} attribútum jelentése, hogy a hős elérkezett
-          céljához, tehát győzött. A nyitó csukó jelölők közé további
-          jelölők jönnek.
+          <\xtag{/page}>: A könyv oldalakból tevődik össze. Minden új
+          oldal egy ilyen jelölőbe kerül. Attribútumai: \attr{id},
+          \attr{death}, \attr{win}, \attr{image}.  Az \attr{id}
+          attribútum kötelező, ez mondja meg, hogy hányadik oldalon
+          vagyunk. A másik három attribútum csak különleges
+          helyzetekben szerepel. A \attr{death} attribútum azt az
+          információt hordozza magában, hogy az oldal, amire érkeztünk
+          olyan oldal, ahonnan nincs tovább vagyis a hős kalandja itt
+          véget ér, elbukta küldetését. Hasonlóan a \attr{win}
+          attribútum jelentése, hogy a hős elérkezett céljához, tehát
+          győzött. Az \attr{image} attribútumnak csata esetén van
+          szerepe. Alapértelmezetten a hősünk képét látjuk, de azon az
+          oldalon, ahol meg kell küzdenünk egy lénnyel, ott annak képe
+          jelenik meg a hőss helyett. A nyitó csukó jelölők közé
+          további jelölők jönnek.
           
         \item <\xtag{p}> <\xtag{/p}> : bekezdést jelöl, tehát ennek a
           segítségével tudjuk a szöveget tagolni, hogy átláthatóbb,
@@ -423,7 +426,8 @@ elkülönül egymástól a motor és a megjelenítés.
 
       \subsubsection{Kifejezések}
         \begin{itemize}
-          \item <\xtag{cond}>\felt \kif$_1$ \kif$_2$<\xtag{/cond}> : Feltétel. Három
+          \item <\xtag{cond}>\felt \kif$_1$ \kif$_2$<\xtag{/cond}> :
+            Feltétel. Olyan mint \proglang{C++}-ban a ?: operátor. Három
             argumentuma van. Amennyiben az első argumentum értéke igaz,
             akkor a második argumentumra kerül a vezérlés, különben a
             harmadikra.
@@ -454,7 +458,7 @@ elkülönül egymástól a motor és a megjelenítés.
             feltétele, melynek teljesülése esetén az igaz ágra kerül a
             vezérlés, különben a hamis ágra. Lehetséges az is, hogy nincs
             hamis ág. Ebben az esetben, ha a feltétel nem teljesül, akkor
-            a következő jelölővel folytatódik a történet.  pl:
+            a következő jelölővel folytatódik a történet.
 
           \item <\xtag{text}>\emph{szöveg}<\xtag{/text}>: Szöveg
             kiiratása. Nem új bekezdésben folytatódik a szöveg, hanem az
@@ -476,7 +480,7 @@ elkülönül egymástól a motor és a megjelenítés.
           addig ez egy új mondatot állít elő a
           kimenetben. \emph{,,Lapozz a 2. oldalra.''}
     
-        \item <\xtag{goto-lucky} \xattr{refYes}{135} \xattr{refNo}{273}/>
+        \item <\xtag{goto-lucky} \xattr{refYes}{\emph{oldalszám}} \xattr{refNo}{\emph{oldalszám}}/>
           : Tedd próbára a
           szerencsédet!. Attribútumai: \attr{refYes}, \attr{refNo}. Két
           kockadobásra van szükségünk. Amennyiben a kockadobások
@@ -633,7 +637,7 @@ elkülönül egymástól a motor és a megjelenítés.
     csak kalandozunk. A \xstate{page\_state} a kockadobások eredményeit
     tárolja. Amikor dobunk egyet a kockával, később le akarjuk
     kérdezni az eredményét, mert ez befolyásolja kalandunk további
-    kimenetét az adott oldalon.
+    kimenetelét az adott oldalon.
     
     \subsection{A játékos állapota}
     Kaland írásánál, kitalálásánál, hogy a történet minél színesebb,
@@ -723,7 +727,7 @@ elkülönül egymástól a motor és a megjelenítés.
     amivel meg lehet változtatni az állapotot.  Tehát a {\bf CyoaT} monádom
     egy monádtranszformátor, melynek külseje egy {\bf Error} monád, a
     belseje pedig egy {\bf RWST} monádtranszformátor, ami az {\bf IO} monád fölött
-    van. A {\bf Reader} monádban tárolom a magukat az oldalakat, és amikor
+    van. A {\bf Reader} monádban tárolom magukat az oldalakat, és amikor
     elérkezünk egy új oldalra, akkor csak le kell kérdezni az
     aktuálisat. A {\bf Writer} monádba kerül a kimenet, amely egy további
     algebrai adattípus. A {\bf State} monád pedig egy játék állapotot ír le.
@@ -752,7 +756,7 @@ modifyPlayerState f = modify $ \gs -> gs{ player_state = f
   (player_state gs) }
     \end{minted}
     Tehát a modifyPlayerState módosítja a játék állapotát. A
-    paraméterül kapott PlayerState -> PlayerState függvény mondja meg,
+    paraméterül kapott \emph{PlayerState -> PlayerState} függvény mondja meg,
     hogy mi a módosítás.
     \begin{minted}{haskell}
 modifyFightState :: (Monad m) => (FightState -> FightState) -> CyoaT m ()
@@ -780,7 +784,7 @@ dropItem item =
   modifyPlayerState $ \ps -> ps { player_carries = Set.delete item
     (player_carries ps) }
     \end{minted}
-    Akkor is a játékos állapota változik, ha eldob vagy felhasznál egy tárgyat.
+    Akkor is a játékos állapota változik, ha eldob, vagy felhasznál egy tárgyat.
 
     \begin{minted}{haskell}
 carries :: (Monad m) => Item -> CyoaT m Bool
@@ -809,7 +813,7 @@ resetFlag flag =
     megettünk-e egy ételt, amit kalandunk közben találtunk.) Ezt az
     információt meg tudjuk jegyezni, le tudjuk kérdezni és lehet, hogy
     egy olyan információról van szó, melyet fel tudunk használni. Ezen
-    információk leírására van.
+    információk leírására készültek ezek a függvények.
 
     \begin{minted}{haskell}
 getCounter :: (Monad m) => Counter -> CyoaT m Int
@@ -823,7 +827,7 @@ modifyCounter f counter = do
     counter (player_counters ps) }
   where f' mx = Just $ f $ 0 `fromMaybe` mx
     \end{minted}
-    Ebben a könyben, melyet feldolgoztam gyűrűket kell
+    Ebben a könyvben, melyet feldolgoztam gyűrűket kell
     gyűjteni. Amikor találunk egy újabbat, akkor változik a játékos
     állapota úgy, hogy fel kell jegyeznünk, hogy még egy ilyen
     gyűjtött tárgyat találtunk. A modifyCounter vátoztatja meg az
@@ -874,6 +878,7 @@ addDice :: (Monad m) => Die -> Int -> CyoaT m ()
 addDice d value = modify $ \gs -> gs{ page_state = Map.insert d value
   (page_state gs) }
 
+
 clearDice :: (Monad m) => CyoaT m ()
 clearDice = modify $ \gs -> gs{ page_state = Map.empty }
   \end{minted}
@@ -881,7 +886,7 @@ clearDice = modify $ \gs -> gs{ page_state = Map.empty }
     Ezek a függvények a kockadobás miatti állapotváltozásokat,
     állapotlekérdezéseket kezelik. A \emph{getDice} művelettel egy konkrét
     kockának az értékét kérdezzük le. Az \emph{addDice} egy új kockát
-    definiál egy konkrét étrékkel. A \emph{clearDice} kitörli az eddigi kockadobásokat.
+    def{}iniál egy konkrét étrékkel. A \emph{clearDice} kitörli az eddigi kockadobásokat.
 
       \subsubsection{Engine.hs}
       Ebben a modulban kifejezéseket, feltételeket értékelünk ki, és
@@ -896,7 +901,7 @@ data Output = OutputClear String [OutputItem]
 
 data OutputAttr = Good
                 | Bad
-                deriving Show
+
 data OutputItem = OutText (Maybe OutputAttr) String
                 | OutDie Int
                 | OutLink Link String
@@ -919,7 +924,7 @@ data OutputItem = OutText (Maybe OutputAttr) String
       szolgál. Van egy Maybe \dt{OutputAttr} attribútuma, ami annyit
       jelent, hogy jó vagy rossz dologot szeretnék közölni a játékos
       szempontjából. Rossz, ha őt sebezték, jó, ha ő sebzett egy
-      csatában. De ez az attribútum opcionális.
+      csatában. Ez az attribútum opcionális.
 
       Az \dt{OutDie} segítségével írok ki a kimenetre egy kockadobást. Az
       Int tartalmazza az értéket.
@@ -957,8 +962,8 @@ evalExpr (ECond cond thn els) = do
   evalExpr (if b then thn else els)
       \end{minted}
       Kifejezések kiértékelésére van az \emph{evalExpr}
-      függvény. Kifejezéseink: +,-,*,%,kockadobás,gyűjés lekédezése,
-      jellemző lekérdezése,if.
+      függvény. Kifejezéseink: +, -, *, %, kockadobás, gyűjés
+      lekédezése, jellemző lekérdezése, if.
 
   \begin{minted}{haskell}
 evalCond :: (Monad m, Functor m) => Cond -> CyoaT m Bool
@@ -999,7 +1004,7 @@ evalPage = do
     Just fs -> do
       fight
   \end{minted}
-  Egy oldal kiértékelésénel az az első kérdés, hogy csatában
+  Egy oldal kiértékelésénél az az első kérdés, hogy csatában
   vagyunk-e, mert ettől függnek a továbbiak. A csatánál azt szerettem
   volna, ha az egész egy nagy oldal lenne és folytatólagosan írná ki a
   program, hogy mi történik. Hagyományos oldal esetén pedig új oldalt
@@ -1057,7 +1062,7 @@ evalPageItem (GotoLucky refYes refNo) = do
   modifyStat pred Luck
   evalPageItem (Goto True page')
   \end{minted}
-  A Tedd próbára a szerencsédet utasítás. Először kiírjuk a kimenetre
+  A Tedd próbára a szerencsédet utasítás. Először kiírjuk a kimenetre,
   hogy \emph{"Tedd próbára SZERENCSÉDET!"}. Majd két kockadobás következik (a
   játék szabályai alapján). Összehasonlítjuk a \stat{szerencse
   pontkainkkal}. Ha kockadobások összege kisebb vagy egyenlő, mint a
@@ -1102,7 +1107,7 @@ evalPageItem (Fight enemies) = do
   amikor egy ellenséggel találkozik a hősünk, akkor nem akarom,
   hogy tudja, hogy az adott oldal hogyan folytatódik, mert például ne
   tudjon harc nélkül a következő oldalra menni. Csak akkor jelennek
-  meg az oldal további részei, amikor már legyőzte a szörnyet vagy
+  meg az oldal további részei, amikor már legyőzte a szörnyet, vagy
   szörnyeket. Így a folytatást félretesszük az állatpotba és majd
   akkor folytatjuk, ha a harc véget ért pozitív kimenettel a hős számára.
   
@@ -1115,13 +1120,58 @@ evalPageItem (Fight enemies) = do
       functionális nyelven megírt függvényeket kellett ugyanúgy
       használnom, mintha \proglang{GTK}-t használnék.
 
-      A \emph{main} függvény ellenőrzi le, hogy a parancssori paramétereket
-      adtunk-e a programnak (az xml fajlt), itt hozom létre az
-      ablakot, itt állítottam be, hogy a szöveg amit kiír, milyen
-      legyen (a linkek kék színnel jelenjenek meg), egy görgetősávot
-      tettem függőlegesen (harcoknál vagy hosszabb szövegeknél szükség
-      van rá), alulra került egy állapotjelző (a játékos jellemzői ide
-      kerülnek, mely egy kép és mellette az érteke).
+      Pl:
+      \begin{itemize}
+        \item a \emph{main} függvény ellenőrzi le, hogy a parancssori
+          paramétereket adtunk-e a programnak (az \proglang{xml}
+          fájlt)
+          \begin{minted}{haskell}
+pages <- case args of
+  [filename] -> parsePages filename
+  otherwise  -> do
+    self <- getProgName
+    hPutStrLn stderr $ unwords ["Usage:", self, "<file.xml>"]
+    exitWith $ ExitFailure 1
+          \end{minted}
+        \item itt hozom létre az ablakot
+          \begin{minted}{haskell}
+wnd <- windowNew
+on wnd deleteEvent $ do
+  lift $ mainQuit
+  return True
+          \end{minted}
+        \item itt állítottam be, hogy a szöveg amit kiír, milyen
+          legyen (a linkek kék színnel jelenjenek meg és alá legyen
+          húzva)
+          \begin{minted}{haskell}
+set tag [ textTagForeground := "blue", textTagUnderline :=
+  UnderlineSingle ]
+          \end{minted}
+        \item egy görgetősávot tettem függőlegesen (harcoknál vagy
+          hosszabb szövegeknél szükség van rá),
+          \begin{minted}{haskell}
+scrollwin <- scrolledWindowNew Nothing Nothing
+scrolledWindowSetPolicy scrollwin PolicyNever PolicyAutomatic
+containerAdd scrollwin tview
+          \end{minted}
+        \item alulra került egy állapotjelző (a játékos jellemzői ide
+          kerülnek, mely egy kép és mellette az érteke).
+          \begin{minted}{haskell}
+statusbar <- statusbarNew
+let statusLabel icon = do
+  hbox <- hBoxNew False 0
+  path <- getDataFileName icon
+  containerAdd hbox =<< imageNewFromFile path
+  label <- labelNew Nothing
+  containerAdd hbox label
+  boxPackStart statusbar hbox PackNatural 0
+  return label
+
+labelHealth <- statusLabel "heart_icon.png"
+labelAgility <- statusLabel "sword_icon.png"
+labelLuck <- statusLabel "luck_icon.png"
+          \end{minted}
+      \end{itemize}
 
       A display függvény dolgozza fel azt a kimenetet, amelyet a
       motorban előállítottam.
@@ -1129,19 +1179,20 @@ evalPageItem (Fight enemies) = do
       A \proglang{Yesod} nevű csomag segítégével írtam meg a webes
       felületet. Mivel webes környezetben nincs állapot, ebben a
       programban pedig számon tartunk néhány dolgot, melyet állapotként
-      fogalmaztunk meg, ezért sütik kezelésével oldottam meg ezt. A
+      fogalmaztunk meg, ezért sütik kezelésével oldottam ezt meg. A
       sütiben a játék állapotát adom oldalról oldalra.
 
-      A routing táblában 3 út van. Az első a \emph{root}, a második a \emph{start}
-      (melynek segítségével bármikor új játékot lehet kezdeni, mert ez
-      egy új, üres állapotot állít elő), a harmadik a \emph{goto} amelynek
-      egy oldalszám a paramétere, hogy hanyadik oldalon tartunk. A
-      \emph{root} út arra szolgál, hogy elrejti azt az információt, hogy
-      melyik oldalon vagyunk, tehát, tényleg csak a sütiben van
+      A routing táblában három út van. Az első a \emph{root}, a második a
+      \emph{start} (melynek segítségével bármikor új játékot lehet
+      kezdeni, mert ez egy új, üres állapotot állít elő), a harmadik a
+      \emph{goto} amelynek egy oldalszám a paramétere, hogy hanyadik
+      oldalon tartunk vagy csata esetén a folyatást tartalmazza. A
+      \emph{root} út arra szolgál, hogy elrejti azt az információt,
+      hogy melyik oldalon vagyunk, tehát, tényleg csak a sütiben van
       információ az állapotról. Minden új oldalra kerülés után
-      átirányítjuk a játékost a \emph{root}-ra, melynek nincs oldalszám
-      paramétere. Különben könnyen csalni lehetne, hogy melyik oldalra
-      menjunk, mert csak beírnánk az oldalszámot.
+      átirányítjuk a játékost a \emph{root}-ra, melynek nincs
+      oldalszám paramétere. Különben könnyen csalni lehetne, hogy
+      melyik oldalra menjunk, mert csak beírnánk az oldalszámot.
       \begin{minted}{haskell}
 mkYesod "CyoaWeb" [$parseRoutes|
 / PRoot GET
@@ -1149,13 +1200,19 @@ mkYesod "CyoaWeb" [$parseRoutes|
 /goto/#Link PGoto GET
 |]
       \end{minted}
-      Az addCassius függvénnyel tudok css-t hozzáadni, melyben például
+      Az \emph{addCassius} függvénnyel tudok css-t hozzáadni, melyben például
       a linkek színét adtam meg.
 
-      A hamletToRepHtml függvény a html leírására szolgál.
+      A \emph{hamletToRepHtml} függvény a html leírására szolgál.
 
-      A toHamlet függvénnyel állítottam elő azt a html kódot, amely
-      megmondja, hogy mit kell tenni a motor által előállított kimenettel.
+      A \emph{toHamlet} függvénnyel állítottam elő azt a html kódot, amely
+      megmondja, hogy mit kell tenni a motor által előállított
+      kimenettel. Sőt \proglang{javascript}-re is szükségem volt, hogy mikor a
+      játékos a csatában választott már, hogy probára teszi-e a
+      szerencséjét, akkor később ezek a linkek már ne legyenek
+      elérhetőek. Csak egyszer engedjük meg neki, hogy
+      válasszon. Ezért aztán \proglang{javascript} segítségével eltüntetem az
+      \emph{onClick()} eseményt.
 
   
   \subsection{Továbbfejlesztési lehetőségek}
