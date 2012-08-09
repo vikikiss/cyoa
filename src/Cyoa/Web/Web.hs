@@ -35,8 +35,6 @@ import qualified Data.Set as Set
 
 data CyoaWeb = CyoaWeb
 
-type Handler_ = GHandler CyoaWeb CyoaWeb
-
 mkYesod "CyoaWeb" [parseRoutes|
 / PRoot GET
 /start PStart GET
@@ -44,7 +42,6 @@ mkYesod "CyoaWeb" [parseRoutes|
 |]
 
 instance Yesod CyoaWeb where
-    approot = ApprootRelative
     -- clientSessionDuration _ = 60
     defaultLayout contents = do
       PageContent title head body <- widgetToPageContent $ do
@@ -113,20 +110,20 @@ itemsToHamlet x ((OutLink link s):is) = [hamlet|
 itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
 itemsToHamlet x ((OutImage img):is) = itemsToHamlet x is
 
-getState :: Handler_ GameState
+getState :: Handler GameState
 getState = do
   state <- lookupSession "state"
   case state of
     Nothing -> redirectWith temporaryRedirect307 PStart
     Just state -> return $ unserialize state
 
-setState :: GameState -> Handler_ ()
+setState :: GameState -> Handler ()
 setState = setSession "state" . serialize
 
 refPages :: IORef [Page]
 refPages = unsafePerformIO $ newIORef (error "refPages")
 
-stepEngine :: CyoaT IO a -> Handler_ (Either GameEvent a, Output)
+stepEngine :: CyoaT IO a -> Handler (Either GameEvent a, Output)
 stepEngine f = do
   s <- getState
   pages <- liftIO $ readIORef refPages
@@ -139,19 +136,19 @@ render output@(OutputClear title _) = defaultLayout $ do
   addHamlet $ toHamlet output
 render output@(OutputContinue _) = hamletToRepHtml $ toHamlet output
 
-getPRoot :: Handler_ RepHtml
+getPRoot :: Handler RepHtml
 getPRoot = do
   (result, output) <- stepEngine evalPage
   render output
 
-getPStart :: Handler_ RepHtml
+getPStart :: Handler RepHtml
 getPStart = do
   (state, output) <- liftIO $ runWriterT mkGameState
   setState state
   render output
   -- redirect RedirectTemporary PRoot
 
-getPGoto :: Link -> Handler_ ()
+getPGoto :: Link -> Handler ()
 getPGoto link = do
   stepEngine (goto link)
   redirectWith temporaryRedirect307 PRoot
