@@ -48,7 +48,7 @@ instance Yesod CyoaWeb where
     -- clientSessionDuration _ = 60
     defaultLayout contents = do
       PageContent title head body <- widgetToPageContent $ do
-        addCassius $ [$cassius|
+        addCassius $ [cassius|
                       .btn, .btnUsed, a
                         color: blue
                         text-decoration: underline
@@ -57,7 +57,7 @@ instance Yesod CyoaWeb where
                      |]
         addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"
         addWidget contents
-      hamletToRepHtml [$hamlet|
+      hamletToRepHtml [hamlet|
                        !!!
                        <html>
                          <head>
@@ -78,38 +78,38 @@ type LinkFactory = Route CyoaWeb -> [(Text, Text)] -> Text
 type Ham = LinkFactory -> Html
 
 toHamlet :: Output -> Ham
-toHamlet (OutputClear title items) = [$hamlet|
+toHamlet (OutputClear title items) = [hamlet|
                                       <h1>#{title}
                                       ^{itemsToHamlet 0 items}
                                       |]
 toHamlet (OutputContinue items) = itemsToHamlet 0 items
 
 itemsToHamlet :: Int -> [OutputItem] -> Ham
-itemsToHamlet x [] = [$hamlet|
+itemsToHamlet x [] = [hamlet|
                       <br>
                       <div #cont>
                      |]
-itemsToHamlet x ((OutText _ s):is) = [$hamlet|
+itemsToHamlet x ((OutText _ s):is) = [hamlet|
                                       #{s}
                                       ^{itemsToHamlet x is}
                                      |]
-itemsToHamlet x (OutBreak:is) = [$hamlet|
+itemsToHamlet x (OutBreak:is) = [hamlet|
                                  <br>
                                  ^{itemsToHamlet x is}
                                 |]
-itemsToHamlet x ((OutDie n):is) = [$hamlet|
+itemsToHamlet x ((OutDie n):is) = [hamlet|
                                    ^{roll}
                                    <span #hide-#{x} style="visibility:hidden">
                                      [#{n}]
                                      ^{itemsToHamlet (succ x) is}
                                   |]
-  where roll = [$hamlet|<a .btn #roll-#{x} onClick="$('#roll-#{x}').remove(); $('#hide-#{x}').css('visibility','visible'); $('#hide-#{x}').removeAttr('id')">Dobj!|]
-itemsToHamlet x ((OutLink link s):is) = [$hamlet|
+  where roll = [hamlet|<a .btn #roll-#{x} onClick="$('#roll-#{x}').remove(); $('#hide-#{x}').css('visibility','visible'); $('#hide-#{x}').removeAttr('id')">Dobj!|]
+itemsToHamlet x ((OutLink link s):is) = [hamlet|
                                          ^{linkToHamlet link}
                                          ^{itemsToHamlet x is}
                                         |]
-  where linkToHamlet link@(PageLink _) = [$hamlet|<a href="@{PGoto link}">#{s}|]
-        linkToHamlet link = [$hamlet|<a .btn onClick="$.get('@{PGoto link}', function(newPage){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(newPage);})">#{s}|]
+  where linkToHamlet link@(PageLink _) = [hamlet|<a href="@{PGoto link}">#{s}|]
+        linkToHamlet link = [hamlet|<a .btn onClick="$.get('@{PGoto link}', function(newPage){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(newPage);})">#{s}|]
 itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
 
 getState :: Handler_ GameState
