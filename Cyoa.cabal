@@ -94,10 +94,11 @@ Executable cyoa-yesod
                  mtl,
                  bytestring,
                  hexpat,
-                 yesod == 0.8.*,
+                 yesod,
+                 yesod-routes,
                  hamlet,
                  blaze-html,
                  text,
-                 web-routes-quasi
+                 http-types
 
   Other-modules: Cyoa.Engine, Cyoa.Parser, Cyoa.NormalizeXML

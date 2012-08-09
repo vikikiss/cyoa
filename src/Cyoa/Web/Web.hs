@@ -13,7 +13,7 @@ import Cyoa.Engine
 import Control.Monad.State
 
 import Yesod
-import Web.Routes.Quasi.Classes
+import Yesod.Routes.Class
 import Control.Applicative ((<$>), (<*>))
 import Data.Maybe
 import Data.Text
@@ -28,22 +28,23 @@ import Control.Monad.Writer
 
 import qualified Text.Blaze.Html4.Strict as HTML
 import Text.Hamlet
+import Network.HTTP.Types (temporaryRedirect307)
 
 import Data.Set (Set)
 import qualified Data.Set as Set
 
 data CyoaWeb = CyoaWeb
 
-type Handler = GHandler CyoaWeb CyoaWeb
+type Handler_ = GHandler CyoaWeb CyoaWeb
 
-mkYesod "CyoaWeb" [$parseRoutes|
+mkYesod "CyoaWeb" [parseRoutes|
 / PRoot GET
 /start PStart GET
 /goto/#Link PGoto GET
 |]
 
 instance Yesod CyoaWeb where
-    approot _ = ""
+    approot = ApprootRelative
     -- clientSessionDuration _ = 60
     defaultLayout contents = do
       PageContent title head body <- widgetToPageContent $ do
@@ -66,9 +67,9 @@ instance Yesod CyoaWeb where
                            ^{body}
                        |]
 
-instance SinglePiece Link where
-  toSinglePiece = pack . show
-  fromSinglePiece s = case reads $ unpack s of
+instance PathPiece Link where
+  toPathPiece = pack . show
+  fromPathPiece s = case reads $ unpack s of
                         ((link, _):_) -> Just link
                         [] -> Nothing
 
@@ -111,21 +112,20 @@ itemsToHamlet x ((OutLink link s):is) = [$hamlet|
         linkToHamlet link = [$hamlet|<a .btn onClick="$.get('@{PGoto link}', function(newPage){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(newPage);})">#{s}|]
 itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
 
-
-getState :: Handler GameState
+getState :: Handler_ GameState
 getState = do
   state <- lookupSession "state"
   case state of
-    Nothing -> redirect RedirectTemporary PStart
+    Nothing -> redirectWith temporaryRedirect307 PStart
     Just state -> return $ unserialize state
 
-setState :: GameState -> Handler ()
+setState :: GameState -> Handler_ ()
 setState = setSession "state" . serialize
 
 refPages :: IORef [Page]
 refPages = unsafePerformIO $ newIORef (error "refPages")
 
-stepEngine :: CyoaT IO a -> Handler (Either GameEvent a, Output)
+stepEngine :: CyoaT IO a -> Handler_ (Either GameEvent a, Output)
 stepEngine f = do
   s <- getState
   pages <- liftIO $ readIORef refPages
@@ -134,26 +134,26 @@ stepEngine f = do
   return (x, w)
 
 render output@(OutputClear title _) = defaultLayout $ do
-  setTitle $ string title
+  setTitle $ HTML.string title
   addHamlet $ toHamlet output
 render output@(OutputContinue _) = hamletToRepHtml $ toHamlet output
 
-getPRoot :: Handler RepHtml
+getPRoot :: Handler_ RepHtml
 getPRoot = do
   (result, output) <- stepEngine evalPage
   render output
 
-getPStart :: Handler RepHtml
+getPStart :: Handler_ RepHtml
 getPStart = do
   (state, output) <- liftIO $ runWriterT mkGameState
   setState state
   render output
   -- redirect RedirectTemporary PRoot
 
-getPGoto :: Link -> Handler ()
+getPGoto :: Link -> Handler_ ()
 getPGoto link = do
   stepEngine (goto link)
-  redirect RedirectTemporary PRoot
+  redirectWith temporaryRedirect307 PRoot
 
 serialize :: GameState -> Text
 serialize = pack . show
