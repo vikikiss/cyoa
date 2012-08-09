@@ -111,6 +111,7 @@ itemsToHamlet x ((OutLink link s):is) = [hamlet|
   where linkToHamlet link@(PageLink _) = [hamlet|<a href="@{PGoto link}">#{s}|]
         linkToHamlet link = [hamlet|<a .btn onClick="$.get('@{PGoto link}', function(newPage){ $('.btn').each(function(){$(this).removeAttr('onClick');$(this).attr('class', 'btnUsed');}); $('#cont').replaceWith(newPage);})">#{s}|]
 itemsToHamlet x ((OutEnemies e):is) = itemsToHamlet x is
+itemsToHamlet x ((OutImage img):is) = itemsToHamlet x is
 
 getState :: Handler_ GameState
 getState = do
